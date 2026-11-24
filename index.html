@@ -1,0 +1,3233 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="theme-color" content="#091124" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="tapi 3D" />
+  <title>tapi • XMO 3D منصة الألعاب</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@600;700;800;900&display=swap');
+
+    * {
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    html, body {
+      margin: 0;
+      padding: 0;
+      min-height: 100%;
+      background: radial-gradient(circle at 50% 0%, #162b5c 0%, #091124 55%, #040812 100%);
+      color: #f8fafc;
+      font-family: 'Cairo', system-ui, -apple-system, sans-serif;
+      overflow-x: hidden;
+    }
+
+    .arcade-btn {
+      border-bottom-width: 4px;
+      transition: transform 0.08s ease, filter 0.15s ease;
+      user-select: none;
+    }
+
+    .arcade-btn:hover {
+      filter: brightness(1.08);
+    }
+
+    .arcade-btn:active {
+      transform: translateY(2px);
+      border-bottom-width: 2px;
+    }
+
+    .glass-card {
+      background: linear-gradient(180deg, rgba(20, 35, 72, 0.92) 0%, rgba(11, 20, 44, 0.96) 100%);
+      border: 1.5px solid rgba(255, 255, 255, 0.14);
+      border-bottom: 5px solid rgba(0, 0, 0, 0.5);
+      border-radius: 22px;
+    }
+
+    .stage-box {
+      position: relative;
+      width: 100%;
+      height: 450px;
+      background: #050a18;
+      overflow: hidden;
+      touch-action: none;
+    }
+
+    .stage-box canvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+    }
+
+    @media (max-width: 640px) {
+      .stage-box {
+        height: 390px;
+      }
+    }
+
+    /* عصا التحكم الافتراضية 360 درجة */
+    .joy-base {
+      width: 112px;
+      height: 112px;
+      border-radius: 9999px;
+      background: radial-gradient(circle, rgba(15, 23, 42, 0.72) 0%, rgba(2, 6, 23, 0.88) 100%);
+      border: 2px solid rgba(56, 189, 248, 0.45);
+      box-shadow: 0 0 24px rgba(0, 229, 255, 0.18), inset 0 0 16px rgba(0, 0, 0, 0.65);
+      position: relative;
+      touch-action: none;
+      user-select: none;
+    }
+
+    .joy-thumb {
+      width: 46px;
+      height: 46px;
+      border-radius: 9999px;
+      background: linear-gradient(180deg, #38bdf8 0%, #0284c7 100%);
+      border: 2px solid #bae6fd;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.55);
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      pointer-events: none;
+    }
+
+    .code-area {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      direction: ltr;
+      text-align: left;
+      tab-size: 2;
+    }
+
+    @keyframes floatSlow {
+      0%, 100% { transform: translateY(0px); }
+      50% { transform: translateY(-8px); }
+    }
+
+    .float-slow {
+      animation: floatSlow 3.2s ease-in-out infinite;
+    }
+  </style>
+</head>
+<body class="antialiased selection:bg-cyan-400 selection:text-slate-950">
+
+  <!-- =====================================================================
+       0. الواجهة الافتتاحية (Opening Splash Screen)
+  ===================================================================== -->
+  <div id="splash-screen" class="fixed inset-0 z-50 bg-slate-950/95 backdrop-blur-lg flex items-center justify-center p-4">
+    <div class="glass-card max-w-lg w-full p-6 sm:p-8 text-center relative overflow-hidden shadow-2xl">
+      <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-cyan-400/15 border border-cyan-400/40 text-cyan-300 text-xs font-black mb-4">
+        <span>⚡ XMO 3D EDITION</span>
+        <span>•</span>
+        <span>7 ألعاب + مختبر كود</span>
+      </div>
+
+      <div class="w-20 h-20 mx-auto mb-4 rounded-3xl bg-gradient-to-br from-cyan-400 via-sky-500 to-amber-400 border-b-4 border-sky-900 flex items-center justify-center text-slate-950 font-black text-5xl shadow-xl float-slow">
+        t
+      </div>
+
+      <h1 class="text-3xl sm:text-4xl font-black text-white tracking-tight">tapi • XMO 3D</h1>
+      <p class="text-slate-300 text-sm sm:text-base mt-2 leading-relaxed">
+        منصة ألعاب ثلاثية وثنائية الأبعاد بعصا تحكم 360°، أصوات محركات وموسيقى مولّدة، ومختبر لبناء لعبتك الخاصة بالكود.
+      </p>
+
+      <div id="splash-status-row" class="mt-5 grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs font-extrabold">
+        <div id="splash-engine-pill" class="px-3 py-2 rounded-xl bg-slate-900/90 border border-white/10 text-cyan-300 truncate">
+          🔄 جاري فحص 3D...
+        </div>
+        <div id="splash-audio-pill" class="px-3 py-2 rounded-xl bg-slate-900/90 border border-white/10 text-amber-300">
+          🔊 جاهز للتفعيل
+        </div>
+        <div class="px-3 py-2 rounded-xl bg-slate-900/90 border border-white/10 text-emerald-300">
+          🎮 7 ألعاب جاهزة
+        </div>
+      </div>
+
+      <button onclick="enterPlatformFromSplash()" class="arcade-btn mt-6 w-full py-3.5 rounded-2xl bg-gradient-to-b from-cyan-400 via-sky-500 to-blue-600 border border-cyan-200/50 border-b-blue-950 text-slate-950 font-black text-lg shadow-xl">
+        🚀 دخول المنصة
+      </button>
+
+      <div class="mt-3 flex items-center justify-center gap-4 text-xs font-bold text-slate-400">
+        <button onclick="enterPlatformFromSplash('custom')" class="hover:text-cyan-300 transition">🛠️ مختبر الكود</button>
+        <span>•</span>
+        <button onclick="enterPlatformFromSplash('install')" class="hover:text-cyan-300 transition">📲 تثبيت / تنزيل</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- =====================================================================
+       1. الشريط العلوي (الهوية، مؤشر المحرك، النجوم، الصوت، التثبيت)
+  ===================================================================== -->
+  <header class="sticky top-0 z-40 bg-slate-950/90 backdrop-blur-md border-b border-white/10 px-3 sm:px-6 py-2.5">
+    <div class="max-w-6xl mx-auto flex items-center justify-between gap-2 flex-wrap">
+      <button onclick="switchTab('games')" class="flex items-center gap-2.5 text-right focus:outline-none group">
+        <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-cyan-400 via-sky-500 to-amber-400 border-b-4 border-sky-900 flex items-center justify-center text-slate-950 font-black text-2xl shadow-lg group-hover:scale-105 transition">
+          t
+        </div>
+        <div class="leading-tight">
+          <div class="flex items-center gap-1.5">
+            <span class="font-black text-lg text-white">tapi</span>
+            <span class="px-1.5 py-0.5 text-[10px] font-black rounded-md bg-cyan-400 text-slate-950">XMO 3D</span>
+          </div>
+          <div id="engine-badge" class="text-[11px] font-bold text-amber-300 flex items-center gap-1">
+            <span class="inline-block w-2 h-2 rounded-full bg-amber-400 animate-pulse"></span>
+            <span>جاري تهيئة محرك 3D...</span>
+          </div>
+        </div>
+      </button>
+
+      <div class="flex items-center gap-2 flex-wrap">
+        <div class="px-3 py-1.5 rounded-xl bg-amber-400/15 border border-amber-400/40 text-amber-300 font-black text-sm flex items-center gap-1.5">
+          <span>★</span>
+          <span id="total-stars">0</span>
+        </div>
+
+        <button onclick="toggleAudio()" class="arcade-btn px-3 py-1.5 rounded-xl bg-slate-800 border border-white/15 border-b-slate-950 text-sm font-extrabold text-white" aria-label="تبديل الصوت">
+          <span id="audio-icon">🔊</span>
+        </button>
+
+        <button onclick="switchTab('install')" class="arcade-btn px-3 py-1.5 rounded-xl bg-gradient-to-b from-cyan-400 to-sky-600 border border-cyan-200/40 border-b-sky-900 text-slate-950 text-xs sm:text-sm font-black">
+          📲 تثبيت التطبيق
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- =====================================================================
+       2. الحاوية الرئيسية والتبويبات
+  ===================================================================== -->
+  <main class="max-w-6xl mx-auto px-3 sm:px-6 py-5 pb-14">
+
+    <nav class="flex items-center gap-2 sm:gap-3 mb-6 overflow-x-auto pb-1" aria-label="التنقل الرئيسي">
+      <button id="tab-btn-games" onclick="switchTab('games')" class="arcade-btn px-4 py-2.5 rounded-2xl bg-gradient-to-b from-cyan-400 to-sky-600 border border-white/30 border-b-sky-900 text-slate-950 font-black text-sm whitespace-nowrap">
+        🎮 الألعاب (7)
+      </button>
+      <button id="tab-btn-custom" onclick="switchTab('custom')" class="arcade-btn px-4 py-2.5 rounded-2xl bg-slate-800/90 border border-white/15 border-b-slate-950 text-slate-200 font-extrabold text-sm whitespace-nowrap">
+        🛠️ لعبتي الخاصة ومختبر الكود
+      </button>
+      <button id="tab-btn-install" onclick="switchTab('install')" class="arcade-btn px-4 py-2.5 rounded-2xl bg-slate-800/90 border border-white/15 border-b-slate-950 text-slate-200 font-extrabold text-sm whitespace-nowrap">
+        📲 التثبيت والتنزيل
+      </button>
+    </nav>
+
+    <!-- ===================================================================
+         تبويب الألعاب السبعة
+    =================================================================== -->
+    <section id="view-games">
+      <div class="flex items-center justify-between gap-3 flex-wrap mb-5">
+        <div>
+          <h1 class="text-2xl sm:text-3xl font-black text-white">ألعاب tapi ثلاثية وثنائية الأبعاد</h1>
+          <p class="text-slate-300 text-sm mt-1">عصا تحكم تفاعلية 360 درجة • رسوميات Three.js 3D مع وضع Offline تلقائي.</p>
+        </div>
+        <div class="flex items-center gap-2">
+          <button onclick="openSplashScreen()" class="arcade-btn px-3 py-1.5 rounded-xl bg-slate-800 border border-white/15 border-b-slate-950 text-cyan-200 text-xs font-extrabold">
+            ✨ الواجهة الافتتاحية
+          </button>
+          <button onclick="resetScores()" class="arcade-btn px-3 py-1.5 rounded-xl bg-rose-500/20 border border-rose-400/40 border-b-rose-900 text-rose-200 text-xs font-extrabold">
+            تصفير النتائج
+          </button>
+        </div>
+      </div>
+
+      <div id="games-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+    </section>
+
+    <!-- ===================================================================
+         مسرح اللعب الموحد (Viewport + HUD + Virtual Analog Joystick)
+    =================================================================== -->
+    <section id="view-stage" class="hidden">
+      <div class="glass-card overflow-hidden shadow-2xl">
+        <!-- شريط الحالة العلوي للعبة -->
+        <div class="bg-slate-950/90 border-b border-white/10 px-4 py-3 flex items-center justify-between gap-2 flex-wrap">
+          <div class="flex items-center gap-2.5 flex-wrap">
+            <span id="stage-emoji" class="text-2xl">🎮</span>
+            <h2 id="stage-name" class="font-black text-base sm:text-lg text-white">اللعبة</h2>
+            <span class="px-2.5 py-1 rounded-xl bg-cyan-400/15 border border-cyan-400/40 text-cyan-300 font-black text-xs sm:text-sm">
+              النقاط: <span id="stage-score">0</span>
+            </span>
+            <span id="stage-telemetry" class="hidden px-2.5 py-1 rounded-xl bg-amber-400/15 border border-amber-400/40 text-amber-300 font-extrabold text-xs"></span>
+            <span class="text-amber-400 font-black text-xs sm:text-sm">★ <span id="stage-best">0</span></span>
+          </div>
+
+          <div class="flex items-center gap-2">
+            <button onclick="restartActiveGame()" class="arcade-btn px-3 py-1.5 rounded-xl bg-amber-400 border border-amber-200 border-b-amber-700 text-slate-950 font-black text-xs sm:text-sm">
+              ↻ إعادة
+            </button>
+            <button onclick="exitStageToMenu()" class="arcade-btn px-3 py-1.5 rounded-xl bg-slate-800 border border-white/15 border-b-slate-950 text-white font-extrabold text-xs sm:text-sm">
+              ✕ القائمة
+            </button>
+          </div>
+        </div>
+
+        <!-- شريط إعدادات اللعبة أثناء اللعب (اختيار الفريق، المحرك، الأغنية...) -->
+        <div id="stage-options" class="hidden bg-slate-900/95 border-b border-white/10 px-4 py-2.5 flex items-center gap-3 flex-wrap"></div>
+
+        <!-- منطقة العرض الرئيسية -->
+        <div class="stage-box">
+          <div id="stage-host" class="w-full h-full"></div>
+
+          <!-- طبقة عصا التحكم الافتراضية 360 درجة + زر الأكشن الديناميكي -->
+          <div id="joy-hud-layer" class="hidden absolute inset-x-0 bottom-3 px-4 sm:px-6 flex items-end justify-between pointer-events-none z-10">
+            <!-- عصا التحكم -->
+            <div class="pointer-events-auto flex flex-col items-center gap-1">
+              <div id="joy-base" class="joy-base" aria-label="عصا التحكم 360">
+                <div id="joy-thumb" class="joy-thumb"></div>
+              </div>
+              <span class="text-[10px] font-bold text-slate-300/80 bg-slate-950/70 px-2 py-0.5 rounded-full">عصا التوجيه 360°</span>
+            </div>
+
+            <!-- زر الأكشن الديناميكي + زر ثانوي -->
+            <div class="pointer-events-auto flex flex-col items-end gap-2">
+              <button id="sec-action-btn" class="hidden arcade-btn px-4 py-2 rounded-2xl bg-slate-800/90 border border-white/20 border-b-slate-950 text-white font-extrabold text-xs">
+                تبديل ترس
+              </button>
+              <button id="main-action-btn" class="arcade-btn w-24 h-24 rounded-full bg-gradient-to-b from-amber-400 via-orange-500 to-rose-600 border-2 border-amber-200/60 border-b-rose-950 text-slate-950 font-black text-sm shadow-2xl flex flex-col items-center justify-center leading-tight">
+                <span id="action-btn-icon" class="text-xl">⚡</span>
+                <span id="action-btn-label">أكشن</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- شاشة البداية / نهاية الجولة -->
+          <div id="stage-overlay" class="absolute inset-0 bg-slate-950/82 backdrop-blur-sm flex items-center justify-center p-4 z-20">
+            <div class="glass-card max-w-sm w-full p-6 text-center shadow-2xl">
+              <div id="ov-emoji" class="text-4xl mb-2">🚀</div>
+              <h3 id="ov-title" class="text-xl font-black text-white mb-2">عنوان اللعبة</h3>
+              <p id="ov-desc" class="text-slate-300 text-sm leading-relaxed mb-5">تعليمات التحكم واللعب.</p>
+              <button id="ov-btn" onclick="startStageMatch()" class="arcade-btn w-full py-3 rounded-2xl bg-gradient-to-b from-emerald-400 to-green-600 border border-emerald-200/50 border-b-green-900 text-slate-950 font-black text-base">
+                ابدأ اللعب الآن
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- شريط التلميحات السفلي -->
+        <div class="bg-slate-950/95 border-t border-white/10 px-4 py-2.5 flex items-center justify-between gap-2 text-xs text-slate-300">
+          <span id="stage-hint" class="font-semibold">استخدم عصا التحكم 360° أو الأسهم / WASD وزر المسافة.</span>
+          <span id="stage-render-tag" class="px-2 py-0.5 rounded-md bg-cyan-400/10 border border-cyan-400/30 text-cyan-300 font-black">3D</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===================================================================
+         تبويب "لعبتي الخاصة" + مختبر بناء الكود
+    =================================================================== -->
+    <section id="view-custom" class="hidden space-y-5">
+      <div class="glass-card p-5 sm:p-6">
+        <div class="flex items-center justify-between gap-3 flex-wrap mb-4">
+          <div>
+            <h1 class="text-xl sm:text-2xl font-black text-white">🛠️ لعبتي الخاصة ومختبر الكود</h1>
+            <p class="text-slate-300 text-sm mt-1">خصّص عالمك بصرياً أو اكتب كود JavaScript باستخدام دوال المساعدة وشغّله فوراً مع عصا التحكم 360°.</p>
+          </div>
+          <div class="flex items-center gap-2 flex-wrap">
+            <button onclick="saveCustomSettings(true)" class="arcade-btn px-4 py-2 rounded-xl bg-slate-800 border border-white/20 border-b-slate-950 text-white font-extrabold text-xs sm:text-sm">
+              💾 حفظ الكود
+            </button>
+            <button onclick="runCustomGame()" class="arcade-btn px-5 py-2 rounded-xl bg-gradient-to-b from-emerald-400 to-green-600 border border-emerald-200/50 border-b-green-900 text-slate-950 font-black text-xs sm:text-sm">
+              ▶ تشغيل لعبتي الخاصة
+            </button>
+          </div>
+        </div>
+
+        <!-- خصائص سريعة -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 mb-5">
+          <div class="bg-slate-950/75 border border-white/10 rounded-2xl p-3">
+            <label for="c-name" class="block text-xs font-extrabold text-slate-300 mb-1">اسم اللعبة</label>
+            <input id="c-name" type="text" maxlength="32" value="عالم tapi المخصص" class="w-full px-3 py-2 rounded-xl bg-slate-900 border border-white/15 text-white text-sm font-bold focus:outline-none focus:border-cyan-400" />
+          </div>
+
+          <div class="bg-slate-950/75 border border-white/10 rounded-2xl p-3">
+            <label for="c-color" class="block text-xs font-extrabold text-slate-300 mb-1">لون الشخصية/المركبة</label>
+            <input id="c-color" type="color" value="#00e5ff" class="w-full h-9 rounded-xl bg-transparent cursor-pointer" />
+          </div>
+
+          <div class="bg-slate-950/75 border border-white/10 rounded-2xl p-3">
+            <label for="c-world" class="block text-xs font-extrabold text-slate-300 mb-1">جو العالم</label>
+            <select id="c-world" class="w-full px-3 py-2 rounded-xl bg-slate-900 border border-white/15 text-white text-sm font-bold">
+              <option value="day">نهار مشرق</option>
+              <option value="sunset">غروب ذهبي</option>
+              <option value="neon">مدينة نيون</option>
+            </select>
+          </div>
+
+          <div class="bg-slate-950/75 border border-white/10 rounded-2xl p-3">
+            <label for="c-speed" class="block text-xs font-extrabold text-slate-300 mb-1">السرعة: <span id="c-speed-lbl" class="text-cyan-400">22</span></label>
+            <input id="c-speed" type="range" min="10" max="42" value="22" oninput="document.getElementById('c-speed-lbl').textContent=this.value" class="w-full accent-cyan-400 mt-1" />
+          </div>
+
+          <div class="bg-slate-950/75 border border-white/10 rounded-2xl p-3">
+            <label for="c-gravity" class="block text-xs font-extrabold text-slate-300 mb-1">الجاذبية: <span id="c-gravity-lbl" class="text-amber-400">26</span></label>
+            <input id="c-gravity" type="range" min="12" max="44" value="26" oninput="document.getElementById('c-gravity-lbl').textContent=this.value" class="w-full accent-amber-400 mt-1" />
+        <!-- محرر الكود + قوالب جاهزة -->
+        <div class="bg-slate-950/85 border border-white/10 rounded-2xl p-4">
+          <div class="flex items-center justify-between gap-2 flex-wrap mb-2">
+            <span class="text-xs sm:text-sm font-extrabold text-cyan-300">مختبر الكود JavaScript (المتغيرات: ctx, w, h, dt, joy, action, state, cfg, addScore, gameOver, tone):</span>
+            <div class="flex items-center gap-2 flex-wrap">
+              <button onclick="loadTemplate('arena360')" class="arcade-btn px-3 py-1 rounded-xl bg-slate-800 border border-white/15 border-b-slate-950 text-xs font-bold text-slate-200">
+                قالب 1: حلبة 360°
+              </button>
+              <button onclick="loadTemplate('jumper')" class="arcade-btn px-3 py-1 rounded-xl bg-slate-800 border border-white/15 border-b-slate-950 text-xs font-bold text-slate-200">
+                قالب 2: قافز الحواجز
+              </button>
+              <button onclick="loadTemplate('blaster')" class="arcade-btn px-3 py-1 rounded-xl bg-slate-800 border border-white/15 border-b-slate-950 text-xs font-bold text-slate-200">
+                قالب 3: مدفع النيون
+              </button>
+              <button onclick="loadTemplate('orbDash')" class="arcade-btn px-3 py-1 rounded-xl bg-slate-800 border border-white/15 border-b-slate-950 text-xs font-bold text-slate-200">
+                قالب 4: جامع الطاقة
+              </button>
+            </div>
+          </div>
+
+          <textarea id="c-code" rows="13" spellcheck="false" class="code-area w-full p-3.5 rounded-xl bg-slate-950 border border-cyan-500/30 text-emerald-300 text-xs sm:text-sm leading-relaxed focus:outline-none focus:border-cyan-400" aria-label="كود لعبتي الخاصة"></textarea>
+
+          <div id="c-msg" class="hidden mt-3 p-3 rounded-xl text-xs sm:text-sm font-bold"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===================================================================
+         تبويب التثبيت والتنزيل المباشر
+    =================================================================== -->
+    <section id="view-install" class="hidden">
+      <div class="glass-card p-5 sm:p-7 max-w-3xl mx-auto">
+        <div class="flex items-center gap-3 mb-5">
+          <div class="w-14 h-14 rounded-2xl bg-gradient-to-br from-cyan-400 to-amber-400 border-b-4 border-sky-900 flex items-center justify-center text-slate-950 font-black text-3xl">
+            t
+          </div>
+          <div>
+            <h1 class="text-xl sm:text-2xl font-black text-white">تثبيت وتنزيل منصة tapi • XMO 3D</h1>
+            <p class="text-slate-300 text-sm">احفظ ملف التطبيق مباشرة على جهازك أو ثبّته كأيقونة على الشاشة الرئيسية.</p>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-5">
+          <button onclick="downloadHtmlApp()" class="arcade-btn p-4 rounded-2xl bg-gradient-to-b from-emerald-400 to-green-600 border border-emerald-200/50 border-b-green-900 text-slate-950 text-right flex items-center justify-between">
+            <div>
+              <div class="font-black text-base">⬇️ تنزيل التطبيق (HTML)</div>
+              <div class="text-xs font-extrabold opacity-85 mt-0.5">يحفظ ملف tapi-app.html للعمل بدون إنترنت</div>
+            </div>
+            <span class="text-2xl">📦</span>
+          </button>
+
+          <button onclick="promptPwaInstall()" class="arcade-btn p-4 rounded-2xl bg-gradient-to-b from-cyan-400 to-sky-600 border border-cyan-200/50 border-b-sky-900 text-slate-950 text-right flex items-center justify-between">
+            <div>
+              <div class="font-black text-base">📲 إضافة للشاشة الرئيسية</div>
+              <div class="text-xs font-extrabold opacity-85 mt-0.5">تثبيت التطبيق على Android و iOS</div>
+            </div>
+            <span class="text-2xl">📱</span>
+          </button>
+        </div>
+
+        <div id="install-feedback" class="hidden mb-5 p-3.5 rounded-2xl bg-cyan-400/15 border border-cyan-400/40 text-cyan-200 text-sm font-bold"></div>
+
+        <div class="bg-slate-950/75 border border-white/10 rounded-2xl p-4 space-y-3 text-sm text-slate-200">
+          <h2 class="font-black text-base text-amber-300">دليل التثبيت السريع على الهواتف:</h2>
+          <div class="flex items-start gap-2.5">
+            <span class="px-2 py-0.5 rounded-lg bg-emerald-500/20 text-emerald-300 font-black text-xs mt-0.5">Android</span>
+            <p>في متصفح <strong>Chrome</strong> اضغط زر <strong>"إضافة للشاشة الرئيسية"</strong> أعلاه أو افتح قائمة المتصفح <strong>(⋮)</strong> واختر <strong>"تثبيت التطبيق"</strong>.</p>
+          </div>
+          <div class="flex items-start gap-2.5">
+            <span class="px-2 py-0.5 rounded-lg bg-sky-500/20 text-sky-300 font-black text-xs mt-0.5">iOS Safari</span>
+            <p>افتح المنصة في <strong>Safari</strong>، اضغط زر المشاركة <strong>(⎋)</strong> بالأسفل، ثم اختر <strong>"إضافة إلى الصفحة الرئيسية" (Add to Home Screen)</strong>.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <script>
+    /* =====================================================================
+       1. تحميل Three.js r128 من عدة مصادر CDN مع بديل Canvas 3D/2.5D مدمج
+    ===================================================================== */
+    const EngineMonitor = {
+      hasThree: false,
+      label: 'محرك Canvas 3D/2.5D المدمج'
+    };
+
+    function setEngineBadge(hasThree, text) {
+      EngineMonitor.hasThree = hasThree;
+      EngineMonitor.label = text;
+      const el = document.getElementById('engine-badge');
+      if (!el) return;
+      el.className = hasThree
+        ? 'text-[11px] font-bold text-emerald-300 flex items-center gap-1'
+        : 'text-[11px] font-bold text-cyan-300 flex items-center gap-1';
+      el.innerHTML = `<span class="inline-block w-2 h-2 rounded-full ${hasThree ? 'bg-emerald-400' : 'bg-cyan-400'}"></span><span>${text}</span>`;
+
+      const splashPill = document.getElementById('splash-engine-pill');
+      if (splashPill) {
+        splashPill.textContent = hasThree ? '🟢 Three.js 3D جاهز' : '🔵 محرك 3D المدمج جاهز';
+      }
+    }
+
+    function openSplashScreen() {
+      playTone(500, 720, 0.06, 'sine');
+      const sp = document.getElementById('splash-screen');
+      if (sp) sp.classList.remove('hidden');
+    }
+
+    function enterPlatformFromSplash(targetTab = 'games') {
+      ensureAudio();
+      playTone(560, 860, 0.09, 'triangle', 0.06);
+      const audioPill = document.getElementById('splash-audio-pill');
+      if (audioPill) audioPill.textContent = soundOn ? '🔊 الصوت مفعّل' : '🔇 الصوت مكتوم';
+      const sp = document.getElementById('splash-screen');
+      if (sp) sp.classList.add('hidden');
+      switchTab(targetTab);
+    }
+
+    function bootThreeLoader() {
+      const sources = [
+        'https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js',
+        'https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js',
+        'https://unpkg.com/three@0.128.0/build/three.min.js'
+      ];
+      let idx = 0;
+
+      function nextSource() {
+        if (window.THREE) {
+          setEngineBadge(true, 'محرك Three.js 3D نشط');
+          return;
+        }
+        if (idx >= sources.length) {
+          setEngineBadge(false, 'وضع Offline: محرك 3D المدمج نشط');
+          return;
+        }
+        const s = document.createElement('script');
+        s.src = sources[idx++];
+        s.async = true;
+        let done = false;
+        const t = setTimeout(() => {
+          if (!done && !window.THREE) {
+            done = true;
+            nextSource();
+          }
+        }, 3000);
+
+        s.onload = () => {
+          if (done) return;
+          done = true;
+          clearTimeout(t);
+          if (window.THREE) setEngineBadge(true, 'محرك Three.js 3D نشط');
+          else nextSource();
+        };
+        s.onerror = () => {
+          if (done) return;
+          done = true;
+          clearTimeout(t);
+          nextSource();
+        };
+        document.head.appendChild(s);
+      }
+      nextSource();
+    }
+
+    /* =====================================================================
+       2. التخزين الآمن (localStorage + ذاكرة احتياطية) والصوتيات Web Audio
+    ===================================================================== */
+    const STORE_KEY = 'tapi_xmo_3d_final_v1';
+    let fallbackStore = null;
+    let soundOn = true;
+    let audioContext = null;
+
+    const INITIAL_SCORES = {
+      gta_3d: 0,
+      football_3d: 0,
+      engine_3d: 0,
+      subway_3d: 0,
+      piano_2d: 0,
+      drift_3d: 0,
+      meteor_3d: 0,
+      custom_3d: 0
+    };
+
+    const CODE_TEMPLATES = {
+      arena360: `// قالب حلبة 360° (متاح: ctx, w, h, dt, joy, action, state, cfg, addScore, gameOver, tone)
+if (!state.ready) {
+  state.ready = true;
+  state.px = w * 0.5;
+  state.py = h * 0.5;
+  state.gems = [];
+  state.mines = [];
+  state.timer = 0.4;
+}
+
+ctx.fillStyle = cfg.world === 'sunset' ? '#2c1228' : (cfg.world === 'neon' ? '#070417' : '#0b2244');
+ctx.fillRect(0, 0, w, h);
+
+// حركة حرة 360 درجة بعصا التحكم + دفعة سرعة بالأكشن
+const boost = action ? 1.65 : 1.0;
+state.px = Math.max(24, Math.min(w - 24, state.px + joy.x * (180 + cfg.speed * 7) * boost * dt));
+state.py = Math.max(24, Math.min(h - 24, state.py + joy.y * (180 + cfg.speed * 7) * boost * dt));
+
+state.timer -= dt;
+if (state.timer <= 0) {
+  state.timer = 0.65;
+  state.gems.push({ x: 30 + Math.random() * (w - 60), y: 30 + Math.random() * (h - 60) });
+  if (state.mines.length < 7) {
+    state.mines.push({
+      x: Math.random() * w,
+      y: Math.random() < 0.5 ? 10 : h - 10,
+      vx: (Math.random() - 0.5) * 180,
+      vy: (Math.random() - 0.5) * 180
+    });
+  }
+}
+
+for (let i = state.gems.length - 1; i >= 0; i--) {
+  const g = state.gems[i];
+  ctx.fillStyle = '#facc15';
+  ctx.beginPath(); ctx.arc(g.x, g.y, 11, 0, Math.PI * 2); ctx.fill();
+  if (Math.hypot(g.x - state.px, g.y - state.py) < 28) {
+    state.gems.splice(i, 1); addScore(20); tone(680, 980, 0.07, 'triangle');
+  }
+}
+
+for (const m of state.mines) {
+  m.x += m.vx * dt; m.y += m.vy * dt;
+  if (m.x < 14 || m.x > w - 14) m.vx *= -1;
+  if (m.y < 14 || m.y > h - 14) m.vy *= -1;
+  ctx.fillStyle = '#fb7185';
+  ctx.beginPath(); ctx.arc(m.x, m.y, 14, 0, Math.PI * 2); ctx.fill();
+  if (Math.hypot(m.x - state.px, m.y - state.py) < 28) { gameOver(); return; }
+}
+
+ctx.fillStyle = cfg.color;
+ctx.beginPath(); ctx.arc(state.px, state.py, 18, 0, Math.PI * 2); ctx.fill();`,
+      jumper: `// قالب قافز الحواجز
+if (!state.ready) {
+  state.ready = true;
+  state.px = w * 0.25;
+  state.py = h - 68;
+  state.vy = 0;
+  state.obs = [];
+  state.spawn = 0.6;
+}
+ctx.fillStyle = '#08152e';
+ctx.fillRect(0, 0, w, h);
+ctx.fillStyle = '#1e293b';
+ctx.fillRect(0, h - 46, w, 46);
+
+state.px = Math.max(24, Math.min(w - 24, state.px + joy.x * 260 * dt));
+if ((action || joy.y < -0.45) && state.py >= h - 68) {
+  state.vy = -Math.sqrt(2 * cfg.gravity * 36 * 135);
+  tone(320, 660, 0.08, 'sine');
+}
+state.vy += cfg.gravity * 36 * dt;
+state.py += state.vy * dt;
+if (state.py > h - 68) { state.py = h - 68; state.vy = 0; }
+
+state.spawn -= dt;
+if (state.spawn <= 0) {
+  state.spawn = Math.max(0.55, 1.2 - cfg.speed * 0.015);
+  state.obs.push({ x: w + 20, vx: 190 + cfg.speed * 7 });
+}
+
+for (let i = state.obs.length - 1; i >= 0; i--) {
+  const o = state.obs[i];
+  o.x -= o.vx * dt;
+  ctx.fillStyle = '#f43f5e';
+  ctx.fillRect(o.x - 14, h - 88, 28, 42);
+  if (Math.abs(o.x - state.px) < 26 && state.py > h - 102) { gameOver(); return; }
+  if (o.x < -30) { state.obs.splice(i, 1); addScore(15); }
+}
+
+ctx.fillStyle = cfg.color;
+ctx.fillRect(state.px - 16, state.py - 22, 32, 44);`,
+      blaster: `// قالب مدفع النيون
+if (!state.ready) {
+  state.ready = true;
+  state.px = w * 0.5;
+  state.shots = [];
+  state.targets = [];
+  state.cd = 0;
+  state.spawn = 0.5;
+}
+ctx.fillStyle = '#050918';
+ctx.fillRect(0, 0, w, h);
+
+state.px = Math.max(24, Math.min(w - 24, state.px + joy.x * 340 * dt));
+state.cd = Math.max(0, state.cd - dt);
+if ((action || joy.y < -0.4) && state.cd <= 0) {
+  state.cd = 0.2;
+  state.shots.push({ x: state.px, y: h - 56 });
+  tone(840, 420, 0.05, 'square');
+}
+
+state.spawn -= dt;
+if (state.spawn <= 0) {
+  state.spawn = 0.65;
+  state.targets.push({ x: 26 + Math.random() * (w - 52), y: -20, vy: 120 + cfg.speed * 5 });
+}
+
+for (let i = state.shots.length - 1; i >= 0; i--) {
+  const s = state.shots[i];
+  s.y -= 480 * dt;
+  ctx.fillStyle = '#34d399';
+  ctx.fillRect(s.x - 3, s.y - 10, 6, 16);
+  if (s.y < -20) state.shots.splice(i, 1);
+}
+
+for (let i = state.targets.length - 1; i >= 0; i--) {
+  const t = state.targets[i];
+  t.y += t.vy * dt;
+  ctx.fillStyle = '#fb7185';
+  ctx.fillRect(t.x - 16, t.y - 16, 32, 32);
+  for (let j = state.shots.length - 1; j >= 0; j--) {
+    if (Math.hypot(t.x - state.shots[j].x, t.y - state.shots[j].y) < 22) {
+      state.targets.splice(i, 1); state.shots.splice(j, 1); addScore(20); tone(540, 820, 0.06, 'triangle'); break;
+    }
+  }
+  if (t && t.y > h - 24) { gameOver(); return; }
+}
+
+ctx.fillStyle = cfg.color;
+ctx.beginPath();
+ctx.moveTo(state.px, h - 54);
+ctx.lineTo(state.px - 18, h - 20);
+ctx.lineTo(state.px + 18, h - 20);
+ctx.closePath();
+ctx.fill();`,
+      orbDash: `// قالب جامع الطاقة التفاعلي
+if (!state.ready) {
+  state.ready = true;
+  state.px = w * 0.5;
+  state.py = h * 0.5;
+  state.orb = { x: w * 0.72, y: h * 0.35 };
+  state.pulse = 0;
+}
+ctx.fillStyle = '#07132b';
+ctx.fillRect(0, 0, w, h);
+state.pulse += dt * 4;
+
+const spd = (200 + cfg.speed * 8) * (action ? 1.5 : 1);
+state.px = Math.max(22, Math.min(w - 22, state.px + joy.x * spd * dt));
+state.py = Math.max(22, Math.min(h - 22, state.py + joy.y * spd * dt));
+
+ctx.fillStyle = '#38bdf8';
+ctx.beginPath();
+ctx.arc(state.orb.x, state.orb.y, 14 + Math.sin(state.pulse) * 3, 0, Math.PI * 2);
+ctx.fill();
+
+if (Math.hypot(state.orb.x - state.px, state.orb.y - state.py) < 30) {
+  addScore(25);
+  tone(520, 920, 0.08, 'sine');
+  state.orb.x = 35 + Math.random() * (w - 70);
+  state.orb.y = 35 + Math.random() * (h - 70);
+}
+
+ctx.fillStyle = cfg.color;
+ctx.beginPath();
+ctx.arc(state.px, state.py, 17, 0, Math.PI * 2);
+ctx.fill();`
+    };
+
+    let appData = {
+      scores: { ...INITIAL_SCORES },
+      custom: {
+        name: 'عالم tapi المخصص',
+        color: '#00e5ff',
+        world: 'day',
+        speed: 22,
+        gravity: 26,
+        code: CODE_TEMPLATES.arena360
+      }
+    };
+
+    function loadData() {
+      let raw = fallbackStore;
+      try {
+        const ls = window.localStorage.getItem(STORE_KEY);
+        if (ls) raw = ls;
+      } catch (_) {}
+      if (raw) {
+        try {
+          const parsed = JSON.parse(raw);
+          if (parsed && parsed.scores) {
+            Object.keys(INITIAL_SCORES).forEach((k) => {
+              const v = Number(parsed.scores[k]);
+              if (Number.isFinite(v) && v >= 0) appData.scores[k] = Math.floor(v);
+            });
+          }
+          if (parsed && parsed.custom) {
+            appData.custom = { ...appData.custom, ...parsed.custom };
+            if (!appData.custom.code || !appData.custom.code.trim()) {
+              appData.custom.code = CODE_TEMPLATES.arena360;
+            }
+          }
+        } catch (_) {}
+      }
+      populateCustomForm();
+      renderGamesGrid();
+    }
+
+    function persistData() {
+      const json = JSON.stringify(appData);
+      fallbackStore = json;
+      try {
+        window.localStorage.setItem(STORE_KEY, json);
+      } catch (_) {}
+      renderGamesGrid();
+      refreshBestBadge();
+    }
+
+    function resetScores() {
+      appData.scores = { ...INITIAL_SCORES };
+      persistData();
+      playTone(250, 140, 0.08, 'sawtooth');
+    }
+
+    function ensureAudio() {
+      if (!soundOn) return null;
+      const AC = window.AudioContext || window.webkitAudioContext;
+      if (!AC) return null;
+      if (!audioContext) audioContext = new AC();
+      if (audioContext.state === 'suspended') {
+        audioContext.resume().catch(() => {});
+      }
+      return audioContext;
+    }
+
+    function playTone(f1, f2, dur = 0.08, type = 'triangle', vol = 0.05) {
+      const ctx = ensureAudio();
+      if (!ctx) return;
+      try {
+        const now = ctx.currentTime;
+        const osc = ctx.createOscillator();
+        const g = ctx.createGain();
+        osc.type = type;
+        osc.frequency.setValueAtTime(f1, now);
+        if (f2) osc.frequency.exponentialRampToValueAtTime(Math.max(40, f2), now + dur);
+        g.gain.setValueAtTime(vol, now);
+        g.gain.exponentialRampToValueAtTime(0.001, now + dur);
+        osc.connect(g);
+        g.connect(ctx.destination);
+        osc.start(now);
+        osc.stop(now + dur);
+      } catch (_) {}
+    }
+
+    function toggleAudio() {
+      soundOn = !soundOn;
+      document.getElementById('audio-icon').textContent = soundOn ? '🔊' : '🔇';
+      if (!soundOn && runningGame && runningGame.onMute) runningGame.onMute();
+      else if (soundOn) {
+        if (runningGame && runningGame.onUnmute) runningGame.onUnmute();
+        playTone(540, 780, 0.07, 'sine');
+      }
+    }
+
+    /* =====================================================================
+       3. عصا التحكم الافتراضية 360 درجة + لوحة المفاتيح الموحدة
+    ===================================================================== */
+    const InputHub = {
+      joyX: 0,
+      joyY: 0,
+      actionDown: false,
+      keys: {},
+      pointerId: null
+    };
+
+    function getUnifiedControl() {
+      let kx = ((InputHub.keys['ArrowRight'] || InputHub.keys['KeyD']) ? 1 : 0)
+             - ((InputHub.keys['ArrowLeft'] || InputHub.keys['KeyA']) ? 1 : 0);
+      let ky = ((InputHub.keys['ArrowDown'] || InputHub.keys['KeyS']) ? 1 : 0)
+             - ((InputHub.keys['ArrowUp'] || InputHub.keys['KeyW']) ? 1 : 0);
+      if (kx !== 0 && ky !== 0) {
+        const inv = 1 / Math.SQRT2;
+        kx *= inv;
+        ky *= inv;
+      }
+      const x = Math.abs(InputHub.joyX) > 0.01 ? InputHub.joyX : kx;
+      const y = Math.abs(InputHub.joyY) > 0.01 ? InputHub.joyY : ky;
+      const action = Boolean(InputHub.actionDown || InputHub.keys['Space'] || InputHub.keys['ShiftLeft'] || InputHub.keys['KeyE']);
+      return { x, y, action };
+    }
+
+    function setupJoystickAndKeys() {
+      const base = document.getElementById('joy-base');
+      const thumb = document.getElementById('joy-thumb');
+      const maxR = 36;
+      const deadzone = 0.14;
+
+      function updateThumb(clientX, clientY) {
+        const rect = base.getBoundingClientRect();
+        const cx = rect.left + rect.width * 0.5;
+        const cy = rect.top + rect.height * 0.5;
+        let dx = clientX - cx;
+        let dy = clientY - cy;
+        const dist = Math.hypot(dx, dy);
+        if (dist > maxR) {
+          dx = (dx / dist) * maxR;
+          dy = (dy / dist) * maxR;
+        }
+        thumb.style.transform = `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px))`;
+
+        const normX = dx / maxR;
+        const normY = dy / maxR;
+        const mag = Math.hypot(normX, normY);
+        if (mag < deadzone) {
+          InputHub.joyX = 0;
+          InputHub.joyY = 0;
+        } else {
+          const scaled = (mag - deadzone) / (1 - deadzone);
+          InputHub.joyX = (normX / mag) * scaled;
+          InputHub.joyY = (normY / mag) * scaled;
+        }
+      }
+
+      function resetThumb() {
+        InputHub.pointerId = null;
+        InputHub.joyX = 0;
+        InputHub.joyY = 0;
+        thumb.style.transform = 'translate(-50%, -50%)';
+      }
+
+      base.addEventListener('pointerdown', (e) => {
+        e.preventDefault();
+        InputHub.pointerId = e.pointerId;
+        if (base.setPointerCapture) {
+          try { base.setPointerCapture(e.pointerId); } catch (_) {}
+        }
+        updateThumb(e.clientX, e.clientY);
+      });
+
+      base.addEventListener('pointermove', (e) => {
+        if (InputHub.pointerId === e.pointerId) {
+          updateThumb(e.clientX, e.clientY);
+        }
+      });
+
+      const endPtr = (e) => {
+        if (InputHub.pointerId === e.pointerId) resetThumb();
+      };
+      base.addEventListener('pointerup', endPtr);
+      base.addEventListener('pointercancel', endPtr);
+
+      const mainAct = document.getElementById('main-action-btn');
+      mainAct.addEventListener('pointerdown', (e) => {
+        e.preventDefault();
+        InputHub.actionDown = true;
+        if (runningGame && runningGame.onActionTap) runningGame.onActionTap();
+      });
+      const relAct = () => { InputHub.actionDown = false; };
+      mainAct.addEventListener('pointerup', relAct);
+      mainAct.addEventListener('pointerleave', relAct);
+      mainAct.addEventListener('pointercancel', relAct);
+
+      const secAct = document.getElementById('sec-action-btn');
+      secAct.addEventListener('pointerdown', (e) => {
+        e.preventDefault();
+        if (runningGame && runningGame.onSecondaryTap) runningGame.onSecondaryTap();
+      });
+
+      window.addEventListener('keydown', (e) => {
+        InputHub.keys[e.code] = true;
+        if (e.code === 'Space' && runningGame && runningGame.onActionTap) {
+          runningGame.onActionTap();
+        }
+        if (runningGame && runningGame.onKeyDown) {
+          runningGame.onKeyDown(e.code);
+        }
+      });
+      window.addEventListener('keyup', (e) => {
+        InputHub.keys[e.code] = false;
+      });
+    }
+
+    /* =====================================================================
+       4. محرك أساس نظيف يدعم Three.js 3D الحقيقي + بديل Canvas 3D/2.5D تلقائي
+    ===================================================================== */
+    class BaseStageController {
+      constructor(host, onScore, onOver) {
+        this.host = host;
+        this.onScore = onScore;
+        this.onOver = onOver;
+        this.alive = false;
+        this.raf = null;
+        this.useThree = Boolean(window.THREE);
+        this.disposables = [];
+
+        this.host.innerHTML = '';
+        this.w = Math.max(300, this.host.clientWidth || 640);
+        this.h = Math.max(260, this.host.clientHeight || 450);
+
+        if (this.useThree && this.prefersThree()) {
+          this.initThree();
+        } else {
+          this.useThree = false;
+          this.initCanvas2D();
+        }
+
+        this._onResize = () => this.handleResize();
+      }
+
+      prefersThree() {
+        return true;
+      }
+
+      initThree() {
+        this.scene = new THREE.Scene();
+        this.camera = new THREE.PerspectiveCamera(58, this.w / this.h, 0.1, 220);
+        this.renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
+        this.renderer.setSize(this.w, this.h);
+        this.renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+        this.renderer.shadowMap.enabled = true;
+        this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+        this.host.appendChild(this.renderer.domElement);
+
+        const hemi = new THREE.HemisphereLight(0xe0f2fe, 0x0f172a, 0.85);
+        this.scene.add(hemi);
+
+        const dir = new THREE.DirectionalLight(0xffffff, 1.0);
+        dir.position.set(16, 28, 18);
+        dir.castShadow = true;
+        dir.shadow.mapSize.width = 1024;
+        dir.shadow.mapSize.height = 1024;
+        this.scene.add(dir);
+      }
+
+      initCanvas2D() {
+        this.canvas = document.createElement('canvas');
+        this.ctx = this.canvas.getContext('2d');
+        this.host.appendChild(this.canvas);
+        this.resizeCanvas2D();
+      }
+
+      resizeCanvas2D() {
+        if (!this.canvas) return;
+        const dpr = Math.min(window.devicePixelRatio || 1, 2);
+        this.canvas.width = Math.floor(this.w * dpr);
+        this.canvas.height = Math.floor(this.h * dpr);
+        this.dpr = dpr;
+      }
+
+      handleResize() {
+        if (!this.host) return;
+        this.w = Math.max(300, this.host.clientWidth || 640);
+        this.h = Math.max(260, this.host.clientHeight || 450);
+        if (this.useThree && this.renderer && this.camera) {
+          this.camera.aspect = this.w / this.h;
+          this.camera.updateProjectionMatrix();
+          this.renderer.setSize(this.w, this.h);
+        } else {
+          this.resizeCanvas2D();
+        }
+      }
+
+      trackMesh(mesh) {
+        this.disposables.push(mesh);
+        return mesh;
+      }
+
+      beginLoop() {
+        this.alive = true;
+        this.lastTime = performance.now();
+        window.addEventListener('resize', this._onResize);
+        const tick = (now) => {
+          if (!this.alive) return;
+          this.raf = requestAnimationFrame(tick);
+          const dt = Math.min(0.05, Math.max(0.001, (now - this.lastTime) / 1000));
+          this.lastTime = now;
+          this.update(dt);
+          if (!this.alive) return;
+          if (this.useThree) {
+            this.renderer.render(this.scene, this.camera);
+          } else {
+            this.ctx.save();
+            this.ctx.scale(this.dpr, this.dpr);
+            this.render2D(this.ctx, this.w, this.h);
+            this.ctx.restore();
+          }
+        };
+        this.raf = requestAnimationFrame(tick);
+      }
+
+      finishGame(pts) {
+        if (!this.alive) return;
+        this.stop();
+        this.onOver(pts);
+      }
+
+      stop() {
+        this.alive = false;
+        if (this.raf) {
+          cancelAnimationFrame(this.raf);
+          this.raf = null;
+        }
+        window.removeEventListener('resize', this._onResize);
+
+        if (this.useThree) {
+          for (const obj of this.disposables) {
+            if (obj.geometry) obj.geometry.dispose();
+            if (obj.material) {
+              if (Array.isArray(obj.material)) obj.material.forEach((m) => m.dispose());
+              else obj.material.dispose();
+            }
+          }
+          this.disposables = [];
+          if (this.renderer) {
+            this.renderer.dispose();
+            this.renderer = null;
+          }
+        }
+        if (this.host) this.host.innerHTML = '';
+      }
+    }
+
+    /* =====================================================================
+       5. اللعبة 1: جيتي أي 3D الواقعية (GTA City 3D - قيادة حرة 360°)
+    ===================================================================== */
+    class GtaCity3DGame extends BaseStageController {
+      start() {
+        this.score = 0;
+        this.carX = 0;
+        this.carZ = 0;
+        this.carYaw = 0;
+        this.speed = 0;
+        this.nitro = 100;
+        this.cpPos = { x: 18, z: -24 };
+        this.traffic = [];
+        this.onScore(0);
+
+        if (this.useThree) {
+          this.buildThreeCity();
+        } else {
+          this.initFallbackTraffic();
+        }
+        this.beginLoop();
+      }
+
+      buildThreeCity() {
+        this.scene.background = new THREE.Color(0x0c1936);
+        this.scene.fog = new THREE.FogExp2(0x0c1936, 0.011);
+
+        // أرضية المدينة والشوارع
+        const ground = this.trackMesh(new THREE.Mesh(
+          new THREE.PlaneGeometry(240, 240),
+          new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.85 })
+        ));
+        ground.rotation.x = -Math.PI / 2;
+        ground.receiveShadow = true;
+        this.scene.add(ground);
+
+        // شبكة طرق وأرصفة ومبانٍ متعددة الارتفاعات وأشجار وأعمدة إنارة
+        const blockCoords = [-54, -18, 18, 54];
+        const bColors = [0x334155, 0x1e3a8a, 0x312e81, 0x0f766e, 0x475569];
+        for (let ix = 0; ix < blockCoords.length; ix++) {
+          for (let iz = 0; iz < blockCoords.length; iz++) {
+            const bx = blockCoords[ix];
+            const bz = blockCoords[iz];
+            if (Math.abs(bx) < 20 && Math.abs(bz) < 20) continue;
+
+            // الرصيف
+            const pad = this.trackMesh(new THREE.Mesh(
+              new THREE.BoxGeometry(22, 0.4, 22),
+              new THREE.MeshStandardMaterial({ color: 0x64748b })
+            ));
+            pad.position.set(bx, 0.2, bz);
+            pad.receiveShadow = true;
+            this.scene.add(pad);
+
+            // المبنى
+            const bh = 10 + ((ix * 7 + iz * 11) % 22);
+            const bldg = this.trackMesh(new THREE.Mesh(
+              new THREE.BoxGeometry(15, bh, 15),
+              new THREE.MeshStandardMaterial({ color: bColors[(ix + iz) % bColors.length], roughness: 0.5 })
+            ));
+            bldg.position.set(bx, bh * 0.5 + 0.4, bz);
+            bldg.castShadow = true;
+            bldg.receiveShadow = true;
+            this.scene.add(bldg);
+
+            // شجرة وعمود إنارة على زاوية الرصيف
+            const trunk = this.trackMesh(new THREE.Mesh(
+              new THREE.CylinderGeometry(0.3, 0.4, 2.2, 8),
+              new THREE.MeshStandardMaterial({ color: 0x78350f })
+            ));
+            trunk.position.set(bx + 9, 1.3, bz + 9);
+            this.scene.add(trunk);
+
+            const crown = this.trackMesh(new THREE.Mesh(
+              new THREE.SphereGeometry(1.6, 10, 10),
+              new THREE.MeshStandardMaterial({ color: 0x16a34a })
+            ));
+            crown.position.set(bx + 9, 3.2, bz + 9);
+            this.scene.add(crown);
+
+            const pole = this.trackMesh(new THREE.Mesh(
+              new THREE.CylinderGeometry(0.12, 0.15, 5.5, 6),
+              new THREE.MeshStandardMaterial({ color: 0x94a3b8 })
+            ));
+            pole.position.set(bx - 9.5, 2.9, bz - 9.5);
+            this.scene.add(pole);
+
+            const lamp = this.trackMesh(new THREE.Mesh(
+              new THREE.SphereGeometry(0.35, 8, 8),
+              new THREE.MeshBasicMaterial({ color: 0xfef08a })
+            ));
+            lamp.position.set(bx - 9.5, 5.7, bz - 9.5);
+            this.scene.add(lamp);
+          }
+        }
+
+        // سيارة اللاعب 3D
+        this.carGroup = new THREE.Group();
+        const body = this.trackMesh(new THREE.Mesh(
+          new THREE.BoxGeometry(2.1, 0.85, 4.2),
+          new THREE.MeshStandardMaterial({ color: 0xfacc15, metalness: 0.35, roughness: 0.3 })
+        ));
+        body.position.y = 0.65;
+        body.castShadow = true;
+        this.carGroup.add(body);
+
+        const cabin = this.trackMesh(new THREE.Mesh(
+          new THREE.BoxGeometry(1.75, 0.68, 2.1),
+          new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.2 })
+        ));
+        cabin.position.set(0, 1.32, -0.15);
+        this.carGroup.add(cabin);
+
+        // سهم توجيه فوق السيارة نحو نقطة التفتيش
+        this.arrowMesh = this.trackMesh(new THREE.Mesh(
+          new THREE.ConeGeometry(0.45, 1.2, 6),
+          new THREE.MeshBasicMaterial({ color: 0x4ade80 })
+        ));
+        this.arrowMesh.position.set(0, 2.5, 0);
+        this.arrowMesh.rotation.x = -Math.PI / 2;
+        this.carGroup.add(this.arrowMesh);
+
+        this.scene.add(this.carGroup);
+
+        // نقطة التفتيش المضيئة
+        this.cpRing = this.trackMesh(new THREE.Mesh(
+          new THREE.TorusGeometry(2.6, 0.25, 10, 24),
+          new THREE.MeshBasicMaterial({ color: 0x4ade80 })
+        ));
+        this.cpRing.rotation.x = Math.PI / 2;
+        this.cpRing.position.set(this.cpPos.x, 0.4, this.cpPos.z);
+        this.scene.add(this.cpRing);
+
+        // سيارات حركة المرور
+        const lanes = [-36, 0, 36];
+        const tCols = [0xfb7185, 0x38bdf8, 0xa855f7, 0x34d399];
+        for (let i = 0; i < 6; i++) {
+          const mesh = this.trackMesh(new THREE.Mesh(
+            new THREE.BoxGeometry(2.0, 1.1, 4.0),
+            new THREE.MeshStandardMaterial({ color: tCols[i % tCols.length] })
+          ));
+          const axis = i % 2 === 0 ? 'z' : 'x';
+          const lane = lanes[i % lanes.length];
+          const pos = -70 + i * 26;
+          mesh.position.set(axis === 'z' ? lane : pos, 0.65, axis === 'z' ? pos : lane);
+          if (axis === 'x') mesh.rotation.y = Math.PI / 2;
+          this.scene.add(mesh);
+          this.traffic.push({ mesh, axis, dir: i % 2 === 0 ? 1 : -1, speed: 11 + (i % 3) * 3 });
+        }
+      }
+
+      initFallbackTraffic() {
+        for (let i = 0; i < 5; i++) {
+          this.traffic.push({
+            x: (i - 2) * 32,
+            z: -35 - i * 24,
+            vz: 14 + i * 2,
+            color: ['#fb7185', '#38bdf8', '#a855f7', '#4ade80'][i % 4]
+          });
+        }
+      }
+
+      spawnNewCheckpoint() {
+        const spots = [-36, 0, 36];
+        let nx = spots[Math.floor(Math.random() * spots.length)];
+        let nz = spots[Math.floor(Math.random() * spots.length)];
+        if (Math.hypot(nx - this.carX, nz - this.carZ) < 16) {
+          nx = -nx || 36;
+        }
+        this.cpPos = { x: nx, z: nz };
+        if (this.cpRing) this.cpRing.position.set(nx, 0.4, nz);
+      }
+
+      update(dt) {
+        const ctrl = getUnifiedControl();
+        const boost = ctrl.action && this.nitro > 4;
+        if (boost) {
+          this.nitro = Math.max(0, this.nitro - 38 * dt);
+        } else {
+          this.nitro = Math.min(100, this.nitro + 16 * dt);
+        }
+
+        // توجيه 360 درجة بالعصا
+        const mag = Math.hypot(ctrl.x, ctrl.y);
+        if (mag > 0.05) {
+          const targetYaw = Math.atan2(-ctrl.x, -ctrl.y);
+          let diff = targetYaw - this.carYaw;
+          while (diff > Math.PI) diff -= Math.PI * 2;
+          while (diff < -Math.PI) diff += Math.PI * 2;
+          this.carYaw += diff * Math.min(1, 7.5 * dt);
+          const maxSpd = boost ? 38 : 24;
+          this.speed += (maxSpd * mag - this.speed) * Math.min(1, 5 * dt);
+        } else {
+          this.speed *= Math.pow(0.15, dt);
+        }
+
+        this.carX += -Math.sin(this.carYaw) * this.speed * dt;
+        this.carZ += -Math.cos(this.carYaw) * this.speed * dt;
+        this.carX = Math.max(-72, Math.min(72, this.carX));
+        this.carZ = Math.max(-72, Math.min(72, this.carZ));
+
+        const kmh = Math.round(Math.abs(this.speed) * 5.2);
+        setTelemetry(`السرعة: ${kmh} كم/س • نيترو: ${Math.round(this.nitro)}%`);
+
+        // الوصول لنقطة التفتيش
+        if (Math.hypot(this.carX - this.cpPos.x, this.carZ - this.cpPos.z) < 4.5) {
+          this.score += 35;
+          this.onScore(this.score);
+          playTone(620, 960, 0.09, 'triangle');
+          this.spawnNewCheckpoint();
+        }
+
+        if (this.useThree) {
+          this.carGroup.position.set(this.carX, 0, this.carZ);
+          this.carGroup.rotation.y = this.carYaw;
+
+          // توجيه السهم نحو نقطة التفتيش
+          const worldAngle = Math.atan2(this.cpPos.x - this.carX, this.cpPos.z - this.carZ);
+          this.arrowMesh.rotation.y = worldAngle - this.carYaw;
+          this.cpRing.scale.setScalar(1 + Math.sin(performance.now() * 0.008) * 0.12);
+
+          // تحديث حركة المرور
+          for (const t of this.traffic) {
+            if (t.axis === 'z') {
+              t.mesh.position.z += t.dir * t.speed * dt;
+              if (t.mesh.position.z > 78) t.mesh.position.z = -78;
+              if (t.mesh.position.z < -78) t.mesh.position.z = 78;
+            } else {
+              t.mesh.position.x += t.dir * t.speed * dt;
+              if (t.mesh.position.x > 78) t.mesh.position.x = -78;
+              if (t.mesh.position.x < -78) t.mesh.position.x = 78;
+            }
+            if (Math.hypot(t.mesh.position.x - this.carX, t.mesh.position.z - this.carZ) < 2.8) {
+              playTone(145, 65, 0.18, 'sawtooth', 0.07);
+              this.finishGame(this.score);
+              return;
+            }
+          }
+
+          // كاميرا متابعة سينمائية خلف السيارة
+          const camX = this.carX + Math.sin(this.carYaw) * 11;
+          const camZ = this.carZ + Math.cos(this.carYaw) * 11;
+          this.camera.position.lerp(new THREE.Vector3(camX, 6.2, camZ), 8 * dt);
+          this.camera.lookAt(this.carX - Math.sin(this.carYaw) * 5, 1.2, this.carZ - Math.cos(this.carYaw) * 5);
+        } else {
+          for (const t of this.traffic) {
+            t.z += t.vz * dt;
+            if (t.z > 30) { t.z = -90; t.x = (Math.random() - 0.5) * 90; }
+            if (Math.hypot(t.x - this.carX, t.z - this.carZ) < 3.4) {
+              playTone(145, 65, 0.18, 'sawtooth', 0.07);
+              this.finishGame(this.score);
+              return;
+            }
+          }
+        }
+      }
+
+      render2D(ctx, w, h) {
+        ctx.fillStyle = '#0f172a';
+        ctx.fillRect(0, 0, w, h);
+        ctx.strokeStyle = 'rgba(255,255,255,0.12)';
+        const offX = (-this.carX * 4) % 60;
+        const offY = (-this.carZ * 4) % 60;
+        for (let x = offX; x < w; x += 60) {
+          ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, h); ctx.stroke();
+        }
+        for (let y = offY; y < h; y += 60) {
+          ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(w, y); ctx.stroke();
+        }
+
+        const cpx = w * 0.5 + (this.cpPos.x - this.carX) * 4;
+        const cpy = h * 0.5 + (this.cpPos.z - this.carZ) * 4;
+        ctx.strokeStyle = '#4ade80';
+        ctx.lineWidth = 4;
+        ctx.beginPath(); ctx.arc(cpx, cpy, 18, 0, Math.PI * 2); ctx.stroke();
+
+        for (const t of this.traffic) {
+          const tx = w * 0.5 + (t.x - this.carX) * 4;
+          const ty = h * 0.5 + (t.z - this.carZ) * 4;
+          ctx.fillStyle = t.color;
+          ctx.fillRect(tx - 12, ty - 20, 24, 40);
+        }
+
+        ctx.save();
+        ctx.translate(w * 0.5, h * 0.5);
+        ctx.rotate(-this.carYaw);
+        ctx.fillStyle = '#facc15';
+        ctx.beginPath();
+        ctx.roundRect(-14, -24, 28, 48, 7);
+        ctx.fill();
+        ctx.restore();
+      }
+    }
+
+    /* =====================================================================
+       6. اللعبة 2: كرة القدم 3D (Football 3D - اختيار الفريق + فيزياء التسديد)
+    ===================================================================== */
+    const FOOTBALL_TEAMS = {
+      algeria: { name: 'الجزائر', primary: 0x16a34a, secondary: 0xffffff, hex: '#16a34a' },
+      madrid: { name: 'ريال مدريد', primary: 0xf8fafc, secondary: 0xfacc15, hex: '#f8fafc' },
+      barca: { name: 'برشلونة', primary: 0x1d4ed8, secondary: 0xdc2626, hex: '#1d4ed8' },
+      brazil: { name: 'البرازيل', primary: 0xfacc15, secondary: 0x15803d, hex: '#facc15' }
+    };
+
+    class Football3DGame extends BaseStageController {
+      constructor(host, onScore, onOver, opts = {}) {
+        super(host, onScore, onOver);
+        this.teamKey = opts.team || 'algeria';
+      }
+
+      setTeam(key) {
+        this.teamKey = key;
+        const info = FOOTBALL_TEAMS[key] || FOOTBALL_TEAMS.algeria;
+        if (this.playerBody && this.playerBody.material) {
+          this.playerBody.material.color.setHex(info.primary);
+        }
+      }
+
+      start() {
+        this.goals = 0;
+        this.timeLeft = 60;
+        this.px = 0;
+        this.pz = 14;
+        this.bx = 0;
+        this.bz = 11;
+        this.bvx = 0;
+        this.bvz = 0;
+        this.keeperX = 0;
+        this.keeperDir = 1;
+        this.onScore(0);
+
+        if (this.useThree) {
+          this.buildStadium3D();
+        }
+        this.beginLoop();
+      }
+
+      buildStadium3D() {
+        this.scene.background = new THREE.Color(0x07132b);
+        const team = FOOTBALL_TEAMS[this.teamKey] || FOOTBALL_TEAMS.algeria;
+
+        // عشب الملعب المخطط
+        for (let i = -4; i <= 4; i++) {
+          const strip = this.trackMesh(new THREE.Mesh(
+            new THREE.PlaneGeometry(34, 5.2),
+            new THREE.MeshStandardMaterial({ color: i % 2 === 0 ? 0x15803d : 0x166534, roughness: 0.8 })
+          ));
+          strip.rotation.x = -Math.PI / 2;
+          strip.position.set(0, 0, i * 5.2);
+          strip.receiveShadow = true;
+          this.scene.add(strip);
+        }
+
+        // خطوط الملعب البيضاء
+        const lineMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
+        const borders = [
+          { w: 34, d: 0.25, x: 0, z: -22 },
+          { w: 34, d: 0.25, x: 0, z: 22 },
+          { w: 0.25, d: 44, x: -17, z: 0 },
+          { w: 0.25, d: 44, x: 17, z: 0 },
+          { w: 34, d: 0.2, x: 0, z: 0 }
+        ];
+        for (const b of borders) {
+          const lm = this.trackMesh(new THREE.Mesh(new THREE.PlaneGeometry(b.w, b.d), lineMat));
+          lm.rotation.x = -Math.PI / 2;
+          lm.position.set(b.x, 0.02, b.z);
+          this.scene.add(lm);
+        }
+
+        // المرمى الشمالي (الهدف) والمرمى الجنوبي
+        const postMat = new THREE.MeshStandardMaterial({ color: 0xffffff, metalness: 0.3 });
+        for (const gz of [-22, 22]) {
+          const leftPost = this.trackMesh(new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.16, 3.2, 10), postMat));
+          leftPost.position.set(-4.6, 1.6, gz);
+          this.scene.add(leftPost);
+
+          const rightPost = this.trackMesh(new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.16, 3.2, 10), postMat));
+          rightPost.position.set(4.6, 1.6, gz);
+          this.scene.add(rightPost);
+
+          const crossBar = this.trackMesh(new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.16, 9.4, 10), postMat));
+          crossBar.rotation.z = Math.PI / 2;
+          crossBar.position.set(0, 3.2, gz);
+          this.scene.add(crossBar);
+
+          const net = this.trackMesh(new THREE.Mesh(
+            new THREE.BoxGeometry(9.2, 3.1, 1.6),
+            new THREE.MeshBasicMaterial({ color: 0xe2e8f0, wireframe: true, transparent: true, opacity: 0.38 })
+          ));
+          net.position.set(0, 1.55, gz + (gz < 0 ? -0.8 : 0.8));
+          this.scene.add(net);
+        }
+
+        // اللاعب 3D
+        this.playerGroup = new THREE.Group();
+        this.playerBody = this.trackMesh(new THREE.Mesh(
+          new THREE.CylinderGeometry(0.65, 0.72, 1.6, 12),
+          new THREE.MeshStandardMaterial({ color: team.primary })
+        ));
+        this.playerBody.position.y = 1.0;
+        this.playerBody.castShadow = true;
+        this.playerGroup.add(this.playerBody);
+
+        const head = this.trackMesh(new THREE.Mesh(
+          new THREE.SphereGeometry(0.45, 12, 12),
+          new THREE.MeshStandardMaterial({ color: 0xfde047 })
+        ));
+        head.position.y = 2.15;
+        this.playerGroup.add(head);
+        this.scene.add(this.playerGroup);
+
+        // حارس المرمى
+        this.keeperMesh = this.trackMesh(new THREE.Mesh(
+          new THREE.BoxGeometry(1.5, 2.2, 0.8),
+          new THREE.MeshStandardMaterial({ color: 0xf97316 })
+        ));
+        this.keeperMesh.position.set(0, 1.1, -20.8);
+        this.keeperMesh.castShadow = true;
+        this.scene.add(this.keeperMesh);
+
+        // الكرة 3D
+        this.ballMesh = this.trackMesh(new THREE.Mesh(
+          new THREE.SphereGeometry(0.55, 16, 16),
+          new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.35 })
+        ));
+        this.ballMesh.castShadow = true;
+        this.scene.add(this.ballMesh);
+
+        this.camera.position.set(0, 18, 28);
+        this.camera.lookAt(0, 0, -4);
+      }
+
+      onActionTap() {
+        if (!this.alive) return;
+        const dist = Math.hypot(this.px - this.bx, this.pz - this.bz);
+        if (dist < 3.4) {
+          const ctrl = getUnifiedControl();
+          const targetX = Math.max(-4.1, Math.min(4.1, this.bx * 0.45 + ctrl.x * 4.5));
+          const dx = targetX - this.bx;
+          const dz = -23.5 - this.bz;
+          const len = Math.hypot(dx, dz) || 1;
+          this.bvx = (dx / len) * 28;
+          this.bvz = (dz / len) * 34;
+          playTone(260, 640, 0.09, 'triangle');
+        }
+      }
+
+      update(dt) {
+        this.timeLeft = Math.max(0, this.timeLeft - dt);
+        if (this.timeLeft <= 0) {
+          this.finishGame(this.goals * 50);
+          return;
+        }
+
+        const ctrl = getUnifiedControl();
+        this.px = Math.max(-15.5, Math.min(15.5, this.px + ctrl.x * 15 * dt));
+        this.pz = Math.max(-18, Math.min(20, this.pz + ctrl.y * 15 * dt));
+
+        // مراوغة الكرة عند الاقتراب
+        const dist = Math.hypot(this.bx - this.px, this.bz - this.pz);
+        if (dist < 1.55) {
+          this.bx = this.px + ctrl.x * 0.9;
+          this.bz = this.pz - 1.1;
+          this.bvx = ctrl.x * 7;
+          this.bvz = ctrl.y * 7 - 3;
+        }
+
+        // حركة الكرة والاحتكاك
+        this.bx += this.bvx * dt;
+        this.bz += this.bvz * dt;
+        this.bvx *= Math.pow(0.28, dt);
+        this.bvz *= Math.pow(0.28, dt);
+
+        if (Math.abs(this.bx) > 16.2) {
+          this.bx = Math.sign(this.bx) * 16.2;
+          this.bvx *= -0.75;
+        }
+
+        // حركة حارس المرمى الذكي
+        const desiredKeeperX = Math.max(-3.9, Math.min(3.9, this.bx * 0.85));
+        this.keeperX += (desiredKeeperX - this.keeperX) * Math.min(1, 3.6 * dt);
+
+        // تصدي الحارس
+        if (Math.abs(this.bz - (-20.8)) < 1.0 && Math.abs(this.bx - this.keeperX) < 1.35) {
+          this.bvz = 16;
+          this.bvx = (Math.random() - 0.5) * 14;
+          playTone(200, 130, 0.08, 'square');
+        }
+
+        // تسجيل هدف
+        if (this.bz <= -22 && Math.abs(this.bx) < 4.5) {
+          this.goals += 1;
+          this.onScore(this.goals * 50);
+          playTone(523.25, 880, 0.22, 'triangle', 0.07);
+          this.px = 0; this.pz = 14;
+          this.bx = 0; this.bz = 11;
+          this.bvx = 0; this.bvz = 0;
+        } else if (this.bz < -23.5 || this.bz > 22.5) {
+          this.bx = this.px;
+          this.bz = Math.max(-16, this.pz - 1.5);
+          this.bvx = 0; this.bvz = 0;
+        }
+
+        const teamName = (FOOTBALL_TEAMS[this.teamKey] || FOOTBALL_TEAMS.algeria).name;
+        setTelemetry(`${teamName} • الأهداف: ${this.goals} • الوقت: ${Math.ceil(this.timeLeft)}ث`);
+
+        if (this.useThree) {
+          this.playerGroup.position.set(this.px, 0, this.pz);
+          this.keeperMesh.position.x = this.keeperX;
+          this.ballMesh.position.set(this.bx, 0.55, this.bz);
+          this.ballMesh.rotation.x += this.bvz * 0.12 * dt;
+          this.camera.position.lerp(new THREE.Vector3(this.px * 0.45, 16, this.pz + 15), 6 * dt);
+          this.camera.lookAt(this.bx * 0.4, 0.6, this.bz - 6);
+        }
+      }
+
+      render2D(ctx, w, h) {
+        ctx.fillStyle = '#15803d';
+        ctx.fillRect(0, 0, w, h);
+        ctx.strokeStyle = '#ffffff';
+        ctx.lineWidth = 3;
+        ctx.strokeRect(24, 24, w - 48, h - 48);
+        ctx.strokeRect(w * 0.5 - 75, 10, 150, 22);
+
+        const sx = (x) => w * 0.5 + (x / 17) * (w * 0.44);
+        const sy = (z) => h * 0.5 + (z / 22) * (h * 0.44);
+
+        ctx.fillStyle = '#f97316';
+        ctx.fillRect(sx(this.keeperX) - 22, sy(-20.8) - 8, 44, 16);
+
+        ctx.fillStyle = '#ffffff';
+        ctx.beginPath(); ctx.arc(sx(this.bx), sy(this.bz), 9, 0, Math.PI * 2); ctx.fill();
+
+        const team = FOOTBALL_TEAMS[this.teamKey] || FOOTBALL_TEAMS.algeria;
+        ctx.fillStyle = team.hex;
+        ctx.beginPath(); ctx.arc(sx(this.px), sy(this.pz), 15, 0, Math.PI * 2); ctx.fill();
+      }
+    }
+
+    /* =====================================================================
+       7. اللعبة 3: مختبر المحركات 3D (Engine Lab 3D + صوت RPM + تبديل تروس)
+    ===================================================================== */
+    const ENGINES_DATA = {
+      i3: { label: 'I3 1.0L اقتصادي', pistons: 3, maxRpm: 7200, baseHz: 25, color: 0x38bdf8, hex: '#38bdf8' },
+      v6: { label: 'V6 3.5L رياضي', pistons: 4, maxRpm: 8500, baseHz: 33, color: 0x4ade80, hex: '#4ade80' },
+      v8: { label: 'V8 5.0L خارق', pistons: 6, maxRpm: 9600, baseHz: 42, color: 0xf97316, hex: '#f97316' }
+    };
+
+    class EngineLab3DGame extends BaseStageController {
+      constructor(host, onScore, onOver, opts = {}) {
+        super(host, onScore, onOver);
+        this.engKey = opts.engine || 'v6';
+        this.profile = ENGINES_DATA[this.engKey] || ENGINES_DATA.v6;
+        this.oscMain = null;
+        this.oscSub = null;
+        this.gainNode = null;
+      }
+
+      switchEngine(key) {
+        this.engKey = key;
+        this.profile = ENGINES_DATA[key] || ENGINES_DATA.v6;
+        if (this.useThree) {
+          this.rebuildEngineMeshes();
+        }
+      }
+
+      start() {
+        this.score = 0;
+        this.rpm = 1100;
+        this.gear = 1;
+        this.angle = 0;
+        this.scoreBank = 0;
+        this.onScore(0);
+
+        if (this.useThree) {
+          this.scene.background = new THREE.Color(0x070d1d);
+          this.camera.position.set(0, 3.8, 10.5);
+          this.camera.lookAt(0, 0.8, 0);
+          this.rebuildEngineMeshes();
+        }
+        this.startSynthAudio();
+        this.beginLoop();
+      }
+
+      rebuildEngineMeshes() {
+        if (this.engineRoot) {
+          this.scene.remove(this.engineRoot);
+        }
+        this.engineRoot = new THREE.Group();
+        this.pistonItems = [];
+
+        const count = this.profile.pistons;
+        const span = (count - 1) * 1.65;
+
+        // العمود المرفقي
+        const crank = this.trackMesh(new THREE.Mesh(
+          new THREE.CylinderGeometry(0.24, 0.24, span + 2.4, 14),
+          new THREE.MeshStandardMaterial({ color: 0x94a3b8, metalness: 0.75, roughness: 0.25 })
+        ));
+        crank.rotation.z = Math.PI / 2;
+        crank.position.y = -0.6;
+        this.engineRoot.add(crank);
+
+        // دولاب الموازنة
+        const flywheel = this.trackMesh(new THREE.Mesh(
+          new THREE.CylinderGeometry(1.45, 1.45, 0.35, 24),
+          new THREE.MeshStandardMaterial({ color: this.profile.color, metalness: 0.5, roughness: 0.3 })
+        ));
+        flywheel.rotation.z = Math.PI / 2;
+        flywheel.position.set(-span * 0.5 - 1.35, -0.6, 0);
+        this.engineRoot.add(flywheel);
+        this.flywheel = flywheel;
+
+        // المكابس وأذرع التوصيل والأسطوانات الشفافة
+        for (let i = 0; i < count; i++) {
+          const x = -span * 0.5 + i * 1.65;
+          const sleeve = this.trackMesh(new THREE.Mesh(
+            new THREE.CylinderGeometry(0.68, 0.68, 2.5, 16, 1, true),
+            new THREE.MeshStandardMaterial({ color: 0x38bdf8, transparent: true, opacity: 0.22, side: THREE.DoubleSide })
+          ));
+          sleeve.position.set(x, 1.45, 0);
+          this.engineRoot.add(sleeve);
+
+          const piston = this.trackMesh(new THREE.Mesh(
+            new THREE.CylinderGeometry(0.58, 0.58, 0.72, 16),
+            new THREE.MeshStandardMaterial({ color: 0xfb7185, metalness: 0.4, roughness: 0.3 })
+          ));
+          piston.position.set(x, 1.4, 0);
+          this.engineRoot.add(piston);
+
+          const rod = this.trackMesh(new THREE.Mesh(
+            new THREE.BoxGeometry(0.18, 1.65, 0.18),
+            new THREE.MeshStandardMaterial({ color: 0xfacc15, metalness: 0.6 })
+          ));
+          rod.position.set(x, 0.4, 0);
+          this.engineRoot.add(rod);
+
+          this.pistonItems.push({ piston, rod, phase: (i * Math.PI * 2) / count });
+        }
+
+        this.scene.add(this.engineRoot);
+      }
+
+      startSynthAudio() {
+        const ctx = ensureAudio();
+        if (!ctx || this.oscMain) return;
+        try {
+          this.oscMain = ctx.createOscillator();
+          this.oscSub = ctx.createOscillator();
+          this.gainNode = ctx.createGain();
+          this.oscMain.type = 'sawtooth';
+          this.oscSub.type = 'triangle';
+          this.oscMain.frequency.setValueAtTime(this.profile.baseHz * 2, ctx.currentTime);
+          this.oscSub.frequency.setValueAtTime(this.profile.baseHz, ctx.currentTime);
+          this.gainNode.gain.setValueAtTime(0.03, ctx.currentTime);
+          this.oscMain.connect(this.gainNode);
+          this.oscSub.connect(this.gainNode);
+          this.gainNode.connect(ctx.destination);
+          this.oscMain.start();
+          this.oscSub.start();
+        } catch (_) {}
+      }
+
+      stopSynthAudio() {
+        try {
+          if (this.oscMain) { this.oscMain.stop(); this.oscMain.disconnect(); }
+          if (this.oscSub) { this.oscSub.stop(); this.oscSub.disconnect(); }
+          if (this.gainNode) { this.gainNode.disconnect(); }
+        } catch (_) {}
+        this.oscMain = null;
+        this.oscSub = null;
+        this.gainNode = null;
+      }
+
+      onMute() { this.stopSynthAudio(); }
+      onUnmute() { if (this.alive) this.startSynthAudio(); }
+
+      onActionTap() {
+        if (!this.alive) return;
+        this.rpm = Math.min(this.profile.maxRpm, this.rpm + 900);
+      }
+
+      onSecondaryTap() {
+        if (!this.alive) return;
+        this.gear = (this.gear % 6) + 1;
+        this.rpm = Math.max(1800, this.rpm * 0.72);
+        playTone(420, 620, 0.08, 'triangle');
+      }
+
+      update(dt) {
+        const ctrl = getUnifiedControl();
+        const revving = ctrl.action || ctrl.y < -0.25;
+
+        if (revving) {
+          this.rpm = Math.min(this.profile.maxRpm, this.rpm + (3600 / (0.7 + this.gear * 0.15)) * dt);
+        } else if (ctrl.y > 0.25) {
+          this.rpm = Math.max(950, this.rpm - 2600 * dt);
+        } else {
+          this.rpm = Math.max(1050, this.rpm - 1400 * dt);
+        }
+
+        const ratio = this.rpm / this.profile.maxRpm;
+        this.angle += (this.rpm / 1000) * 7.2 * dt;
+
+        // تدوير الكاميرا بالعصا يمين/يسار
+        if (this.useThree && this.engineRoot) {
+          this.engineRoot.rotation.y += ctrl.x * 1.8 * dt;
+          if (this.flywheel) this.flywheel.rotation.x = this.angle;
+          for (const item of this.pistonItems) {
+            const ph = this.angle + item.phase;
+            item.piston.position.y = 1.45 + Math.sin(ph) * 0.58;
+            item.rod.position.y = 0.42 + Math.sin(ph) * 0.29;
+            item.rod.rotation.x = Math.cos(ph) * 0.28;
+          }
+        }
+
+        // تحديث الصوت التفاعلي
+        if (this.oscMain && this.oscSub && this.gainNode && audioContext) {
+          try {
+            const now = audioContext.currentTime;
+            const freq = this.profile.baseHz * (1.2 + ratio * 5.4);
+            this.oscMain.frequency.setTargetAtTime(freq, now, 0.04);
+            this.oscSub.frequency.setTargetAtTime(freq * 0.5, now, 0.04);
+            this.gainNode.gain.setTargetAtTime(0.025 + ratio * 0.055, now, 0.04);
+          } catch (_) {}
+        }
+
+        // احتساب نقاط الأداء
+        this.scoreBank += dt * (this.rpm / 1000) * (10 + this.gear * 3);
+        if (this.scoreBank >= 1) {
+          const add = Math.floor(this.scoreBank);
+          this.scoreBank -= add;
+          this.score += add;
+          this.onScore(this.score);
+        }
+
+        setTelemetry(`${Math.round(this.rpm)} RPM • الترس ${this.gear} • ${this.profile.label}`);
+      }
+
+      render2D(ctx, w, h) {
+        ctx.fillStyle = '#070e20';
+        ctx.fillRect(0, 0, w, h);
+        const count = this.profile.pistons;
+        const spacing = Math.min(90, (w * 0.72) / count);
+        const startX = w * 0.5 - ((count - 1) * spacing) * 0.5;
+        for (let i = 0; i < count; i++) {
+          const cx = startX + i * spacing;
+          const ph = this.angle + (i * Math.PI * 2) / count;
+          const py = h * 0.36 + Math.sin(ph) * 28;
+          ctx.fillStyle = '#1e293b';
+          ctx.fillRect(cx - 22, h * 0.24, 44, 105);
+          ctx.fillStyle = '#fb7185';
+          ctx.fillRect(cx - 18, py, 36, 24);
+        }
+        ctx.fillStyle = this.profile.hex;
+        ctx.font = '900 18px Cairo, sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText(`${Math.round(this.rpm)} RPM • الترس ${this.gear}`, w * 0.5, h - 42);
+      }
+
+      stop() {
+        this.stopSynthAudio();
+        super.stop();
+      }
+    }
+
+    /* =====================================================================
+       8. اللعبة 4: صبواي 3D (Subway Rush 3D - 3 مسارات + قفز وانزلاق)
+    ===================================================================== */
+    class SubwayRush3DGame extends BaseStageController {
+      start() {
+        this.score = 0;
+        this.lane = 0; // -1, 0, 1
+        this.visX = 0;
+        this.jumpY = 0;
+        this.jumpVy = 0;
+        this.duckTimer = 0;
+        this.speed = 24;
+        this.spawnTimer = 0.45;
+        this.laneCooldown = 0;
+        this.entities = [];
+        this.onScore(0);
+
+        if (this.useThree) {
+          this.buildTrack3D();
+        }
+        this.beginLoop();
+      }
+
+      buildTrack3D() {
+        this.scene.background = new THREE.Color(0x0c4a6e);
+        this.scene.fog = new THREE.FogExp2(0x0c4a6e, 0.015);
+
+        const track = this.trackMesh(new THREE.Mesh(
+          new THREE.BoxGeometry(11, 0.5, 130),
+          new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.75 })
+        ));
+        track.position.set(0, -0.25, -45);
+        track.receiveShadow = true;
+        this.scene.add(track);
+
+        // قضبان السكك الثلاثة
+        const railMat = new THREE.MeshStandardMaterial({ color: 0x94a3b8, metalness: 0.6 });
+        for (const lx of [-3.0, 0, 3.0]) {
+          for (const off of [-0.65, 0.65]) {
+            const rail = this.trackMesh(new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.12, 130), railMat));
+            rail.position.set(lx + off, 0.06, -45);
+            this.scene.add(rail);
+          }
+        }
+
+        // شخصية العدّاء 3D
+        this.runnerGroup = new THREE.Group();
+        this.runnerBody = this.trackMesh(new THREE.Mesh(
+          new THREE.BoxGeometry(1.0, 1.4, 0.8),
+          new THREE.MeshStandardMaterial({ color: 0x00e5ff })
+        ));
+        this.runnerBody.position.y = 0.8;
+        this.runnerBody.castShadow = true;
+        this.runnerGroup.add(this.runnerBody);
+
+        this.runnerHead = this.trackMesh(new THREE.Mesh(
+          new THREE.BoxGeometry(0.75, 0.75, 0.75),
+          new THREE.MeshStandardMaterial({ color: 0xfde047 })
+        ));
+        this.runnerHead.position.y = 1.95;
+        this.runnerGroup.add(this.runnerHead);
+
+        this.runnerGroup.position.set(0, 0, 6);
+        this.scene.add(this.runnerGroup);
+
+        this.camera.position.set(0, 5.6, 13.5);
+        this.camera.lookAt(0, 1.5, -10);
+      }
+
+      changeLane(dir) {
+        const next = Math.max(-1, Math.min(1, this.lane + dir));
+        if (next !== this.lane) {
+          this.lane = next;
+          playTone(440, 580, 0.05, 'sine');
+        }
+      }
+
+      doJump() {
+        if (!this.alive) return;
+        if (this.jumpY <= 0.02) {
+          this.duckTimer = 0;
+          this.jumpVy = 12.2;
+          playTone(340, 720, 0.08, 'sine');
+        }
+      }
+
+      doDuck() {
+        if (!this.alive) return;
+        this.duckTimer = 0.65;
+        if (this.jumpY > 0) this.jumpVy = -16;
+        playTone(260, 160, 0.06, 'triangle');
+      }
+
+      onActionTap() {
+        this.doJump();
+      }
+
+      onKeyDown(code) {
+        if (code === 'ArrowLeft' || code === 'KeyA') this.changeLane(-1);
+        else if (code === 'ArrowRight' || code === 'KeyD') this.changeLane(1);
+        else if (code === 'ArrowUp' || code === 'KeyW') this.doJump();
+        else if (code === 'ArrowDown' || code === 'KeyS') this.doDuck();
+      }
+
+      update(dt) {
+        const ctrl = getUnifiedControl();
+        this.laneCooldown = Math.max(0, this.laneCooldown - dt);
+
+        if (this.laneCooldown <= 0 && Math.abs(ctrl.x) > 0.55) {
+          this.changeLane(ctrl.x > 0 ? 1 : -1);
+          this.laneCooldown = 0.22;
+        }
+        if (ctrl.y < -0.58) this.doJump();
+        else if (ctrl.y > 0.58) this.doDuck();
+
+        this.speed = Math.min(44, this.speed + 0.5 * dt);
+        const targetX = this.lane * 3.0;
+        this.visX += (targetX - this.visX) * Math.min(1, 14 * dt);
+
+        if (this.jumpY > 0 || this.jumpVy !== 0) {
+          this.jumpVy -= 30 * dt;
+          this.jumpY += this.jumpVy * dt;
+          if (this.jumpY <= 0) {
+            this.jumpY = 0;
+            this.jumpVy = 0;
+          }
+        }
+        this.duckTimer = Math.max(0, this.duckTimer - dt);
+
+        if (this.useThree) {
+          this.runnerGroup.position.set(this.visX, this.jumpY, 6);
+          const scY = this.duckTimer > 0 ? 0.5 : 1.0;
+          this.runnerGroup.scale.set(1, scY, 1);
+        }
+
+        // توليد القطارات والحواجز والعملات
+        this.spawnTimer -= dt;
+        if (this.spawnTimer <= 0) {
+          this.spawnTimer = Math.max(0.45, 0.98 - (this.speed - 24) * 0.02);
+          const lanes = [-1, 0, 1];
+          const obsLane = lanes[Math.floor(Math.random() * 3)];
+          const types = ['train', 'low', 'high'];
+          const kind = types[Math.floor(Math.random() * types.length)];
+          this.spawnEntity(obsLane, -64, kind);
+
+          const coinLane = lanes[(obsLane + 1) % 3];
+          this.spawnEntity(coinLane, -68, 'coin');
+        }
+
+        for (let i = this.entities.length - 1; i >= 0; i--) {
+          const ent = this.entities[i];
+          ent.z += this.speed * dt;
+          if (this.useThree && ent.mesh) {
+            ent.mesh.position.z = ent.z;
+            if (ent.kind === 'coin') ent.mesh.rotation.y += 3 * dt;
+          }
+
+          if (Math.abs(ent.z - 6) < 1.35 && Math.abs(ent.lane * 3.0 - this.visX) < 1.1) {
+            if (ent.kind === 'coin') {
+              this.removeEntity(i);
+              this.score += 20;
+              this.onScore(this.score);
+              playTone(680, 980, 0.07, 'triangle');
+              continue;
+            } else if (ent.kind === 'low' && this.jumpY > 1.1) {
+              // تم تجاوز الحاجز المنخفض
+            } else if (ent.kind === 'high' && this.duckTimer > 0) {
+              // تم الانزلاق تحت الحاجز العلوي
+            } else {
+              playTone(145, 65, 0.18, 'sawtooth', 0.07);
+              this.finishGame(this.score);
+              return;
+            }
+          }
+
+          if (ent.z > 14) {
+            const wasObs = ent.kind !== 'coin';
+            this.removeEntity(i);
+            if (wasObs) {
+              this.score += 10;
+              this.onScore(this.score);
+            }
+          }
+        }
+
+        const names = { '-1': 'اليسار', '0': 'الوسط', '1': 'اليمين' };
+        setTelemetry(`المسار: ${names[String(this.lane)]} • السرعة: ${Math.round(this.speed * 3)} كم/س`);
+      }
+
+      spawnEntity(lane, z, kind) {
+        let mesh = null;
+        if (this.useThree) {
+          const x = lane * 3.0;
+          if (kind === 'train') {
+            mesh = this.trackMesh(new THREE.Mesh(
+              new THREE.BoxGeometry(2.1, 2.5, 6.2),
+              new THREE.MeshStandardMaterial({ color: 0x2563eb })
+            ));
+            mesh.position.set(x, 1.25, z);
+          } else if (kind === 'low') {
+            mesh = this.trackMesh(new THREE.Mesh(
+              new THREE.BoxGeometry(2.1, 1.0, 0.7),
+              new THREE.MeshStandardMaterial({ color: 0xfb7185 })
+            ));
+            mesh.position.set(x, 0.5, z);
+          } else if (kind === 'high') {
+            mesh = this.trackMesh(new THREE.Mesh(
+              new THREE.BoxGeometry(2.2, 0.85, 0.7),
+              new THREE.MeshStandardMaterial({ color: 0xf97316 })
+            ));
+            mesh.position.set(x, 2.05, z);
+          } else {
+            mesh = this.trackMesh(new THREE.Mesh(
+              new THREE.CylinderGeometry(0.55, 0.55, 0.2, 14),
+              new THREE.MeshStandardMaterial({ color: 0xfacc15, metalness: 0.5 })
+            ));
+            mesh.rotation.x = Math.PI / 2;
+            mesh.position.set(x, 1.1, z);
+          }
+          this.scene.add(mesh);
+        }
+        this.entities.push({ lane, z, kind, mesh });
+      }
+
+      removeEntity(idx) {
+        const ent = this.entities[idx];
+        if (ent && ent.mesh && this.scene) {
+          this.scene.remove(ent.mesh);
+        }
+        this.entities.splice(idx, 1);
+      }
+
+      render2D(ctx, w, h) {
+        ctx.fillStyle = '#0f172a';
+        ctx.fillRect(0, 0, w, h);
+        for (const ent of this.entities) {
+          const p = Math.max(0, Math.min(1, (ent.z + 65) / 75));
+          const y = h * 0.25 + p * (h * 0.65);
+          const x = w * 0.5 + ent.lane * (40 + p * 85);
+          ctx.fillStyle = ent.kind === 'coin' ? '#facc15' : '#fb7185';
+          ctx.fillRect(x - 16 * p, y - 24 * p, 32 * p, 32 * p);
+        }
+        const px = w * 0.5 + this.visX * 42;
+        const py = h - 42 - this.jumpY * 45;
+        ctx.fillStyle = '#00e5ff';
+        ctx.fillRect(px - 16, py - 38, 32, 38);
+      }
+    }
+
+    /* =====================================================================
+       9. اللعبة 5: بيانو بلاك 2D (Piano Black 2D - اختيار الأغنية والمرحلة)
+    ===================================================================== */
+    const PIANO_TRACKS = {
+      furelise: {
+        title: 'Fur Elise',
+        freqs: [659.25, 622.25, 659.25, 622.25, 659.25, 493.88, 587.33, 523.25, 440.00],
+        lanes: [3, 2, 3, 2, 3, 1, 2, 1, 0]
+      },
+      odetojoy: {
+        title: 'Ode to Joy',
+        freqs: [329.63, 329.63, 349.23, 392.00, 392.00, 349.23, 329.63, 293.66, 261.63, 261.63, 293.66, 329.63],
+        lanes: [1, 1, 2, 3, 3, 2, 1, 0, 0, 0, 1, 2]
+      },
+      turkish: {
+        title: 'Turkish March',
+        freqs: [493.88, 440.00, 415.30, 440.00, 523.25, 587.33, 523.25, 493.88, 523.25, 659.25],
+        lanes: [2, 1, 0, 1, 2, 3, 2, 1, 2, 3]
+      }
+    };
+
+    const PIANO_LEVELS = {
+      calm: { name: 'هادئ', speed: 225, gap: 0.62, mult: 1 },
+      medium: { name: 'متوسط', speed: 320, gap: 0.44, mult: 1.5 },
+      pro: { name: 'محترف', speed: 425, gap: 0.31, mult: 2 }
+    };
+
+    class PianoBlack2DGame extends BaseStageController {
+      constructor(host, onScore, onOver, opts = {}) {
+        super(host, onScore, onOver);
+        this.track = PIANO_TRACKS[opts.track] || PIANO_TRACKS.furelise;
+        this.level = PIANO_LEVELS[opts.level] || PIANO_LEVELS.calm;
+      }
+
+      prefersThree() {
+        return false; // بيانو بلاك 2D نقي
+      }
+
+      start() {
+        this.score = 0;
+        this.combo = 0;
+        this.stepIdx = 0;
+        this.spawnTimer = 0.2;
+        this.speed = this.level.speed;
+        this.tiles = [];
+        this.flash = [0, 0, 0, 0];
+        this.onScore(0);
+
+        this._onDown = (e) => {
+          const rect = this.canvas.getBoundingClientRect();
+          if (!rect.width) return;
+          const lane = Math.max(0, Math.min(3, Math.floor(((e.clientX - rect.left) / rect.width) * 4)));
+          this.hitLane(lane);
+        };
+        this.canvas.addEventListener('pointerdown', this._onDown);
+        this.beginLoop();
+      }
+
+      onKeyDown(code) {
+        if (code === 'KeyD' || code === 'ArrowLeft') this.hitLane(0);
+        else if (code === 'KeyF' || code === 'ArrowDown') this.hitLane(1);
+        else if (code === 'KeyJ' || code === 'ArrowUp') this.hitLane(2);
+        else if (code === 'KeyK' || code === 'ArrowRight') this.hitLane(3);
+      }
+
+      hitLane(lane) {
+        if (!this.alive) return;
+        this.flash[lane] = 0.16;
+        const zoneY = this.h * 0.80;
+        const tol = Math.max(64, this.h * 0.15);
+
+        let bestIdx = -1;
+        let bestDist = tol;
+        for (let i = 0; i < this.tiles.length; i++) {
+          const t = this.tiles[i];
+          if (t.lane === lane) {
+            const d = Math.abs((t.y + t.h * 0.5) - zoneY);
+            if (d < bestDist) {
+              bestDist = d;
+              bestIdx = i;
+            }
+          }
+        }
+
+        if (bestIdx >= 0) {
+          const hitTile = this.tiles.splice(bestIdx, 1)[0];
+          this.combo += 1;
+          const mult = (1 + Math.floor(this.combo / 5)) * this.level.mult;
+          this.score += Math.round(10 * mult);
+          this.onScore(this.score);
+          setTelemetry(`كومبو ×${this.combo} • ${this.track.title}`);
+          playTone(hitTile.freq, hitTile.freq * 1.005, 0.18, 'triangle', 0.065);
+        } else {
+          this.combo = 0;
+          setTelemetry(`كومبو ×0 • ${this.track.title}`);
+          playTone(150, 100, 0.08, 'sawtooth', 0.04);
+        }
+      }
+
+      update(dt) {
+        this.speed = Math.min(this.level.speed + 190, this.speed + 6 * dt);
+        for (let i = 0; i < 4; i++) {
+          if (this.flash[i] > 0) this.flash[i] = Math.max(0, this.flash[i] - dt);
+        }
+
+        this.spawnTimer -= dt;
+        if (this.spawnTimer <= 0) {
+          this.spawnTimer = Math.max(0.24, this.level.gap - (this.speed - this.level.speed) * 0.0007);
+          const idx = this.stepIdx % this.track.lanes.length;
+          this.stepIdx += 1;
+          const tileH = Math.max(70, Math.min(108, this.h * 0.21));
+          this.tiles.push({
+            lane: this.track.lanes[idx],
+            freq: this.track.freqs[idx],
+            y: -tileH,
+            h: tileH
+          });
+        }
+
+        const zoneY = this.h * 0.80;
+        for (let i = this.tiles.length - 1; i >= 0; i--) {
+          const t = this.tiles[i];
+          t.y += this.speed * dt;
+          if (t.y > zoneY + t.h * 0.55) {
+            playTone(140, 65, 0.18, 'sawtooth', 0.07);
+            this.finishGame(this.score);
+            return;
+          }
+        }
+      }
+
+      render2D(ctx, w, h) {
+        const laneW = w / 4;
+        const zoneY = h * 0.80;
+        const keys = ['D', 'F', 'J', 'K'];
+
+        const grad = ctx.createLinearGradient(0, 0, 0, h);
+        grad.addColorStop(0, '#070f22');
+        grad.addColorStop(1, '#181136');
+        ctx.fillStyle = grad;
+        ctx.fillRect(0, 0, w, h);
+
+        for (let i = 0; i < 4; i++) {
+          const x = i * laneW;
+          ctx.fillStyle = i % 2 === 0 ? 'rgba(255,255,255,0.03)' : 'rgba(255,255,255,0.06)';
+          ctx.fillRect(x + 2, 0, laneW - 4, h);
+
+          if (this.flash[i] > 0) {
+            ctx.fillStyle = 'rgba(0, 229, 255, 0.28)';
+            ctx.fillRect(x + 2, 0, laneW - 4, h);
+          }
+
+          ctx.strokeStyle = 'rgba(255,255,255,0.12)';
+          ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, h); ctx.stroke();
+
+          // منطقة الضرب المضيئة
+          ctx.fillStyle = this.flash[i] > 0 ? '#facc15' : '#1e293b';
+          ctx.strokeStyle = '#38bdf8';
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          ctx.roundRect(x + 8, zoneY - 26, laneW - 16, 52, 12);
+          ctx.fill();
+          ctx.stroke();
+
+          ctx.fillStyle = this.flash[i] > 0 ? '#050a18' : '#f8fafc';
+          ctx.font = '900 16px monospace';
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.fillText(keys[i], x + laneW * 0.5, zoneY);
+        }
+
+        for (const t of this.tiles) {
+          const x = t.lane * laneW + 10;
+          const bw = laneW - 20;
+          ctx.fillStyle = '#040711';
+          ctx.strokeStyle = '#38bdf8';
+          ctx.lineWidth = 2.5;
+          ctx.beginPath();
+          ctx.roundRect(x, t.y, bw, t.h, 12);
+          ctx.fill();
+          ctx.stroke();
+
+          ctx.fillStyle = 'rgba(56, 189, 248, 0.4)';
+          ctx.fillRect(x + 8, t.y + 8, bw - 16, 6);
+        }
+      }
+
+      stop() {
+        if (this.canvas && this._onDown) {
+          this.canvas.removeEventListener('pointerdown', this._onDown);
+        }
+        super.stop();
+      }
+    }
+
+    /* =====================================================================
+       9.5 اللعبة 6: سباق الدريفت النيون 3D (Neon Drift 3D)
+    ===================================================================== */
+    class NeonDrift3DGame extends BaseStageController {
+      start() {
+        this.score = 0;
+        this.carX = 0;
+        this.carZ = 6;
+        this.heading = 0;
+        this.driftAngle = 0;
+        this.speed = 26;
+        this.driftPts = 0;
+        this.spawnTimer = 0.45;
+        this.cones = [];
+        this.boosts = [];
+        this.onScore(0);
+
+        if (this.useThree) {
+          this.buildDriftTrack3D();
+        }
+        this.beginLoop();
+      }
+
+      buildDriftTrack3D() {
+        this.scene.background = new THREE.Color(0x060417);
+        this.scene.fog = new THREE.FogExp2(0x060417, 0.014);
+
+        const road = this.trackMesh(new THREE.Mesh(
+          new THREE.BoxGeometry(16, 0.4, 150),
+          new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.35 })
+        ));
+        road.position.set(0, -0.2, -55);
+        road.receiveShadow = true;
+        this.scene.add(road);
+
+        const railMat = new THREE.MeshStandardMaterial({ color: 0xe879f9, emissive: 0x701a75, emissiveIntensity: 0.6 });
+        for (const sx of [-8.2, 8.2]) {
+          const rail = this.trackMesh(new THREE.Mesh(new THREE.BoxGeometry(0.4, 1.1, 150), railMat));
+          rail.position.set(sx, 0.55, -55);
+          this.scene.add(rail);
+        }
+
+        this.driftCar = new THREE.Group();
+        const chassis = this.trackMesh(new THREE.Mesh(
+          new THREE.BoxGeometry(2.1, 0.75, 4.1),
+          new THREE.MeshStandardMaterial({ color: 0x00e5ff, metalness: 0.4, roughness: 0.25 })
+        ));
+        chassis.position.y = 0.55;
+        chassis.castShadow = true;
+        this.driftCar.add(chassis);
+
+        const spoiler = this.trackMesh(new THREE.Mesh(
+          new THREE.BoxGeometry(2.2, 0.22, 0.55),
+          new THREE.MeshStandardMaterial({ color: 0xf43f5e })
+        ));
+        spoiler.position.set(0, 1.05, 1.75);
+        this.driftCar.add(spoiler);
+
+        this.driftCar.position.set(0, 0, 6);
+        this.scene.add(this.driftCar);
+
+        this.camera.position.set(0, 6.2, 15);
+        this.camera.lookAt(0, 1.2, -12);
+      }
+
+      onActionTap() {
+        if (!this.alive) return;
+        this.speed = Math.min(48, this.speed + 8);
+        playTone(460, 880, 0.09, 'sawtooth', 0.045);
+      }
+
+      update(dt) {
+        const ctrl = getUnifiedControl();
+        const boost = ctrl.action ? 1.28 : 1.0;
+        this.speed = Math.min(46, (25 + this.score * 0.025) * boost);
+
+        this.carX = Math.max(-6.4, Math.min(6.4, this.carX + ctrl.x * 16.5 * dt));
+        const targetDrift = -ctrl.x * 0.55;
+        this.driftAngle += (targetDrift - this.driftAngle) * Math.min(1, 10 * dt);
+
+        if (Math.abs(ctrl.x) > 0.35) {
+          this.driftPts += Math.abs(ctrl.x) * 32 * dt;
+          if (this.driftPts >= 10) {
+            const add = Math.floor(this.driftPts / 10) * 10;
+            this.driftPts %= 10;
+            this.score += add;
+            this.onScore(this.score);
+            playTone(520 + (this.score % 240), 740, 0.05, 'triangle', 0.035);
+          }
+        }
+
+        if (this.useThree && this.driftCar) {
+          this.driftCar.position.x = this.carX;
+          this.driftCar.rotation.y = this.driftAngle;
+          this.camera.position.lerp(new THREE.Vector3(this.carX * 0.65, 6.0, 14.5), 7 * dt);
+          this.camera.lookAt(this.carX * 0.5, 1.0, -14);
+        }
+
+        this.spawnTimer -= dt;
+        if (this.spawnTimer <= 0) {
+          this.spawnTimer = Math.max(0.36, 0.78 - this.score * 0.0005);
+          const xPos = (Math.random() - 0.5) * 12.4;
+          if (this.useThree) {
+            const cone = this.trackMesh(new THREE.Mesh(
+              new THREE.ConeGeometry(0.85, 1.9, 6),
+              new THREE.MeshStandardMaterial({ color: 0xfb7185 })
+            ));
+            cone.position.set(xPos, 0.95, -72);
+            this.scene.add(cone);
+            this.cones.push({ x: xPos, z: -72, mesh: cone });
+          } else {
+            this.cones.push({ x: xPos, z: -72, mesh: null });
+          }
+
+          if (Math.random() < 0.45) {
+            const bx = (Math.random() - 0.5) * 11.5;
+            let bMesh = null;
+            if (this.useThree) {
+              bMesh = this.trackMesh(new THREE.Mesh(
+                new THREE.OctahedronGeometry(0.7, 0),
+                new THREE.MeshStandardMaterial({ color: 0xfacc15 })
+              ));
+              bMesh.position.set(bx, 1.0, -78);
+              this.scene.add(bMesh);
+            }
+            this.boosts.push({ x: bx, z: -78, mesh: bMesh });
+          }
+        }
+
+        for (let i = this.cones.length - 1; i >= 0; i--) {
+          const c = this.cones[i];
+          c.z += this.speed * dt;
+          if (c.mesh) {
+            c.mesh.position.z = c.z;
+            c.mesh.rotation.y += 2.5 * dt;
+          }
+          if (Math.abs(c.z - this.carZ) < 1.9 && Math.abs(c.x - this.carX) < 1.55) {
+            playTone(140, 60, 0.18, 'sawtooth', 0.07);
+            this.finishGame(this.score);
+            return;
+          }
+          if (c.z > 15) {
+            if (c.mesh && this.scene) this.scene.remove(c.mesh);
+            this.cones.splice(i, 1);
+            this.score += 10;
+            this.onScore(this.score);
+          }
+        }
+
+        for (let i = this.boosts.length - 1; i >= 0; i--) {
+          const b = this.boosts[i];
+          b.z += this.speed * dt;
+          if (b.mesh) {
+            b.mesh.position.z = b.z;
+            b.mesh.rotation.y += 4 * dt;
+          }
+          if (Math.abs(b.z - this.carZ) < 2.0 && Math.abs(b.x - this.carX) < 1.7) {
+            if (b.mesh && this.scene) this.scene.remove(b.mesh);
+            this.boosts.splice(i, 1);
+            this.score += 25;
+            this.onScore(this.score);
+            playTone(720, 1080, 0.08, 'sine', 0.05);
+            continue;
+          }
+          if (b.z > 15) {
+            if (b.mesh && this.scene) this.scene.remove(b.mesh);
+            this.boosts.splice(i, 1);
+          }
+        }
+
+        setTelemetry(`السرعة: ${Math.round(this.speed * 4.2)} كم/س • زاوية الانجراف: ${Math.round(Math.abs(this.driftAngle) * 57)}°`);
+      }
+
+      render2D(ctx, w, h) {
+        ctx.fillStyle = '#070417';
+        ctx.fillRect(0, 0, w, h);
+        ctx.fillStyle = '#1e293b';
+        ctx.fillRect(w * 0.2, 0, w * 0.6, h);
+
+        for (const c of this.cones) {
+          const p = Math.max(0, Math.min(1, (c.z + 72) / 84));
+          const cx = w * 0.5 + (c.x / 7) * (w * 0.26);
+          const cy = h * 0.1 + p * (h * 0.78);
+          ctx.fillStyle = '#fb7185';
+          ctx.beginPath(); ctx.arc(cx, cy, 10 * p + 5, 0, Math.PI * 2); ctx.fill();
+        }
+
+        const px = w * 0.5 + (this.carX / 7) * (w * 0.26);
+        const py = h - 56;
+        ctx.save();
+        ctx.translate(px, py);
+        ctx.rotate(this.driftAngle);
+        ctx.fillStyle = '#00e5ff';
+        ctx.fillRect(-14, -22, 28, 44);
+        ctx.restore();
+      }
+    }
+
+    /* =====================================================================
+       9.6 اللعبة 7: قناص النيازك الفضائي 3D (Meteor Interceptor 3D)
+    ===================================================================== */
+    class MeteorInterceptor3DGame extends BaseStageController {
+      start() {
+        this.score = 0;
+        this.shield = 3;
+        this.px = 0;
+        this.py = 0;
+        this.fireCd = 0;
+        this.spawnTimer = 0.5;
+        this.lasers = [];
+        this.meteors = [];
+        this.onScore(0);
+
+        if (this.useThree) {
+          this.buildSpace3D();
+        }
+        this.beginLoop();
+      }
+
+      buildSpace3D() {
+        this.scene.background = new THREE.Color(0x030712);
+        this.scene.fog = new THREE.FogExp2(0x030712, 0.01);
+
+        // نجوم الفضاء
+        const starGeo = new THREE.BufferGeometry();
+        const starCount = 260;
+        const posArr = new Float32Array(starCount * 3);
+        for (let i = 0; i < starCount * 3; i += 3) {
+          posArr[i] = (Math.random() - 0.5) * 90;
+          posArr[i + 1] = (Math.random() - 0.5) * 60;
+          posArr[i + 2] = -Math.random() * 110;
+        }
+        starGeo.setAttribute('position', new THREE.BufferAttribute(posArr, 3));
+        const stars = this.trackMesh(new THREE.Points(
+          starGeo,
+          new THREE.PointsMaterial({ color: 0xe2e8f0, size: 0.45 })
+        ));
+        this.scene.add(stars);
+
+        this.fighter = new THREE.Group();
+        const hull = this.trackMesh(new THREE.Mesh(
+          new THREE.ConeGeometry(0.95, 2.5, 6),
+          new THREE.MeshStandardMaterial({ color: 0x38bdf8, metalness: 0.45, roughness: 0.25 })
+        ));
+        hull.rotation.x = -Math.PI / 2;
+        this.fighter.add(hull);
+
+        const wings = this.trackMesh(new THREE.Mesh(
+          new THREE.BoxGeometry(2.8, 0.16, 1.0),
+          new THREE.MeshStandardMaterial({ color: 0xfacc15 })
+        ));
+        wings.position.set(0, -0.1, 0.35);
+        this.fighter.add(wings);
+
+        this.fighter.position.set(0, 0, 9);
+        this.scene.add(this.fighter);
+
+        this.camera.position.set(0, 4.5, 16.5);
+        this.camera.lookAt(0, 0, -12);
+      }
+
+      fireBlaster() {
+        if (!this.alive || this.fireCd > 0) return;
+        this.fireCd = 0.18;
+        playTone(940, 380, 0.06, 'square', 0.04);
+
+        for (const side of [-0.75, 0.75]) {
+          let mesh = null;
+          if (this.useThree) {
+            mesh = this.trackMesh(new THREE.Mesh(
+              new THREE.CylinderGeometry(0.1, 0.1, 1.8, 6),
+              new THREE.MeshBasicMaterial({ color: 0x4ade80 })
+            ));
+            mesh.rotation.x = Math.PI / 2;
+            mesh.position.set(this.px + side, this.py, 7.5);
+            this.scene.add(mesh);
+          }
+          this.lasers.push({ x: this.px + side, y: this.py, z: 7.5, mesh });
+        }
+      }
+
+      onActionTap() {
+        this.fireBlaster();
+      }
+
+      update(dt) {
+        const ctrl = getUnifiedControl();
+        this.px = Math.max(-10.5, Math.min(10.5, this.px + ctrl.x * 16 * dt));
+        this.py = Math.max(-5.5, Math.min(6.0, this.py - ctrl.y * 12 * dt));
+
+        this.fireCd = Math.max(0, this.fireCd - dt);
+        if (ctrl.action || this.keys['Space']) {
+          this.fireBlaster();
+        }
+
+        if (this.useThree && this.fighter) {
+          this.fighter.position.set(this.px, this.py, 9);
+          this.fighter.rotation.z = -ctrl.x * 0.45;
+          this.fighter.rotation.x = ctrl.y * 0.25;
+          this.camera.position.lerp(new THREE.Vector3(this.px * 0.35, 4.2 + this.py * 0.25, 16.5), 6 * dt);
+          this.camera.lookAt(this.px * 0.2, this.py * 0.2, -14);
+        }
+
+        this.spawnTimer -= dt;
+        if (this.spawnTimer <= 0) {
+          this.spawnTimer = Math.max(0.35, 0.85 - this.score * 0.0005);
+          const mx = (Math.random() - 0.5) * 19;
+          const my = (Math.random() - 0.5) * 9.5;
+          let mMesh = null;
+          if (this.useThree) {
+            mMesh = this.trackMesh(new THREE.Mesh(
+              new THREE.DodecahedronGeometry(1.25, 0),
+              new THREE.MeshStandardMaterial({ color: 0xfb7185, roughness: 0.7 })
+            ));
+            mMesh.position.set(mx, my, -58);
+            this.scene.add(mMesh);
+          }
+          this.meteors.push({ x: mx, y: my, z: -58, vz: 18 + this.score * 0.025, mesh: mMesh });
+        }
+
+        for (let i = this.lasers.length - 1; i >= 0; i--) {
+          const l = this.lasers[i];
+          l.z -= 48 * dt;
+          if (l.mesh) l.mesh.position.z = l.z;
+          if (l.z < -65) {
+            if (l.mesh && this.scene) this.scene.remove(l.mesh);
+            this.lasers.splice(i, 1);
+          }
+        }
+
+        for (let i = this.meteors.length - 1; i >= 0; i--) {
+          const m = this.meteors[i];
+          m.z += m.vz * dt;
+          if (m.mesh) {
+            m.mesh.position.z = m.z;
+            m.mesh.rotation.x += 2.2 * dt;
+            m.mesh.rotation.y += 1.8 * dt;
+          }
+
+          let hit = false;
+          for (let j = this.lasers.length - 1; j >= 0; j--) {
+            const l = this.lasers[j];
+            if (Math.abs(l.z - m.z) < 1.8 && Math.hypot(l.x - m.x, l.y - m.y) < 1.65) {
+              if (l.mesh && this.scene) this.scene.remove(l.mesh);
+              this.lasers.splice(j, 1);
+              if (m.mesh && this.scene) this.scene.remove(m.mesh);
+              this.meteors.splice(i, 1);
+              this.score += 20;
+              this.onScore(this.score);
+              playTone(580, 920, 0.07, 'triangle', 0.05);
+              hit = true;
+              break;
+            }
+          }
+          if (hit) continue;
+
+          if (m.z > 10.5) {
+            if (m.mesh && this.scene) this.scene.remove(m.mesh);
+            this.meteors.splice(i, 1);
+            this.shield -= 1;
+            playTone(170, 75, 0.16, 'sawtooth', 0.065);
+            if (this.shield <= 0) {
+              this.finishGame(this.score);
+              return;
+            }
+          }
+        }
+
+        setTelemetry(`الدرع: ${'🛡️'.repeat(Math.max(0, this.shield))} • النيازك النشطة: ${this.meteors.length}`);
+      }
+
+      render2D(ctx, w, h) {
+        ctx.fillStyle = '#030712';
+        ctx.fillRect(0, 0, w, h);
+
+        for (const m of this.meteors) {
+          const p = Math.max(0.15, Math.min(1, (m.z + 58) / 68));
+          const sx = w * 0.5 + (m.x / 11) * (w * 0.42);
+          const sy = h * 0.5 - (m.y / 6.5) * (h * 0.36);
+          ctx.fillStyle = '#fb7185';
+          ctx.beginPath(); ctx.arc(sx, sy, 22 * p, 0, Math.PI * 2); ctx.fill();
+        }
+
+        for (const l of this.lasers) {
+          const p = Math.max(0.15, Math.min(1, (l.z + 58) / 68));
+          const sx = w * 0.5 + (l.x / 11) * (w * 0.42);
+          const sy = h * 0.5 - (l.y / 6.5) * (h * 0.36);
+          ctx.fillStyle = '#4ade80';
+          ctx.fillRect(sx - 2, sy - 8, 4, 16 * p + 6);
+        }
+
+        const fx = w * 0.5 + (this.px / 11) * (w * 0.42);
+        const fy = h - 54;
+        ctx.fillStyle = '#38bdf8';
+        ctx.beginPath();
+        ctx.moveTo(fx, fy - 18);
+        ctx.lineTo(fx - 16, fy + 14);
+        ctx.lineTo(fx + 16, fy + 14);
+        ctx.closePath();
+        ctx.fill();
+      }
+    }
+
+    /* =====================================================================
+       10. تشغيل "لعبتي الخاصة" من مختبر الكود مع عصا التحكم 360°
+    ===================================================================== */
+    class CustomUserGame extends BaseStageController {
+      constructor(host, onScore, onOver, cfg) {
+        super(host, onScore, onOver);
+        this.cfg = cfg;
+        this.state = { ready: false };
+        this.fn = null;
+      }
+
+      prefersThree() {
+        return false; // تنفيذ كود المستخدم داخل ساحة Canvas تفاعلية سريعة
+      }
+
+      start() {
+        this.score = 0;
+        this.onScore(0);
+        const msgEl = document.getElementById('c-msg');
+        if (msgEl) msgEl.classList.add('hidden');
+
+        try {
+          this.fn = new Function(
+            'ctx', 'w', 'h', 'dt', 'joy', 'action', 'state', 'cfg', 'addScore', 'gameOver', 'tone',
+            this.cfg.code
+          );
+        } catch (err) {
+          this.showErr('خطأ في صياغة الكود: ' + (err && err.message ? err.message : String(err)));
+          this.finishGame(0);
+          return;
+        }
+        this.beginLoop();
+      }
+
+      showErr(text) {
+        const msgEl = document.getElementById('c-msg');
+        if (msgEl) {
+          msgEl.textContent = text;
+          msgEl.className = 'mt-3 p-3 rounded-xl text-xs sm:text-sm font-bold bg-rose-500/20 border border-rose-400/50 text-rose-200 code-area';
+          msgEl.classList.remove('hidden');
+        }
+      }
+
+      update() {}
+
+      render2D(ctx, w, h) {
+        if (!this.fn) return;
+        const ctrl = getUnifiedControl();
+        try {
+          this.fn(
+            ctx, w, h, 0.016,
+            { x: ctrl.x, y: ctrl.y },
+            ctrl.action,
+            this.state,
+            this.cfg,
+            (pts) => {
+              this.score += Number(pts || 0);
+              this.onScore(this.score);
+            },
+            () => {
+              playTone(150, 65, 0.15, 'sawtooth');
+              this.finishGame(this.score);
+            },
+            playTone
+          );
+        } catch (err) {
+          this.showErr('خطأ أثناء تشغيل الكود: ' + (err && err.message ? err.message : String(err)));
+          this.finishGame(this.score);
+        }
+      }
+    }
+
+    /* =====================================================================
+       11. كتالوج الألعاب السبعة وإدارة الواجهة والمسرح
+    ===================================================================== */
+    const GAMES_LIST = [
+      {
+        id: 'gta_3d',
+        emoji: '🏎️',
+        tag: '3D OPEN DRIVE',
+        grad: 'from-amber-500 via-orange-600 to-rose-600',
+        name: 'جيتي أي 3D الواقعية',
+        desc: 'قيادة حرة 360 درجة بعصا التحكم داخل مدينة 3D بالمباني والتقاطعات وحركة المرور ونقاط التفتيش.',
+        hint: 'عصا التحكم 360° للتوجيه والسرعة • زر نيترو لتسريع فائق',
+        hasJoy: true,
+        actionIcon: '🔥',
+        actionLabel: 'نيترو',
+        create: (h, s, o) => new GtaCity3DGame(h, s, o)
+      },
+      {
+        id: 'football_3d',
+        emoji: '⚽',
+        tag: '3D STADIUM',
+        grad: 'from-emerald-500 via-green-600 to-teal-700',
+        name: 'كرة القدم 3D',
+        desc: 'اختر فريقك المفضل، راوغ بالعصا 360 درجة وسدّد بقوة نحو المرمى ضد حارس المرمى الذكي.',
+        hint: 'عصا التحكم 360° للمراوغة • زر تسديد لركل الكرة بقوة',
+        hasJoy: true,
+        actionIcon: '👟',
+        actionLabel: 'تسديد',
+        optionsHtml: `
+          <label class="text-xs font-extrabold text-slate-300">الفريق:</label>
+          <select id="opt-fb-team" onchange="if(runningGame && runningGame.setTeam) runningGame.setTeam(this.value)" class="px-2.5 py-1 rounded-xl bg-slate-800 border border-white/15 text-xs font-bold text-white">
+            <option value="algeria">الجزائر 🇩🇿</option>
+            <option value="madrid">ريال مدريد ⚪</option>
+            <option value="barca">برشلونة 🔵🔴</option>
+            <option value="brazil">البرازيل 🇧🇷</option>
+          </select>
+        `,
+        readOpts: () => ({ team: document.getElementById('opt-fb-team')?.value || 'algeria' }),
+        create: (h, s, o, opts) => new Football3DGame(h, s, o, opts)
+      },
+      {
+        id: 'engine_3d',
+        emoji: '⚙️',
+        tag: '3D MECHANICS',
+        grad: 'from-sky-500 via-blue-600 to-indigo-700',
+        name: 'مختبر المحركات 3D',
+        desc: 'اختر نوع المحرك واستمع لصوته التفاعلي وزِد دوراته (RPM) وشاهد المكابس وعمود المرفق في 3D.',
+        hint: 'اضغط باستمرار على دعسة بنزين لرفع RPM • العصا لتدوير المحرك',
+        hasJoy: true,
+        actionIcon: '⛽',
+        actionLabel: 'بنزين',
+        secLabel: '⚙️ تبديل ترس',
+        optionsHtml: `
+          <label class="text-xs font-extrabold text-slate-300">نوع المحرك:</label>
+          <select id="opt-eng-type" onchange="if(runningGame && runningGame.switchEngine) runningGame.switchEngine(this.value)" class="px-2.5 py-1 rounded-xl bg-slate-800 border border-white/15 text-xs font-bold text-white">
+            <option value="i3">I3 1.0L اقتصادي</option>
+            <option value="v6" selected>V6 3.5L رياضي</option>
+            <option value="v8">V8 5.0L خارق</option>
+          </select>
+        `,
+        readOpts: () => ({ engine: document.getElementById('opt-eng-type')?.value || 'v6' }),
+        create: (h, s, o, opts) => new EngineLab3DGame(h, s, o, opts)
+      },
+      {
+        id: 'subway_3d',
+        emoji: '🚇',
+        tag: '3D RUNNER',
+        grad: 'from-cyan-500 via-sky-600 to-blue-700',
+        name: 'صبواي 3D',
+        desc: 'جري لا نهائي عبر 3 مسارات ثلاثية الأبعاد، اقفز أو انزلق لتفادي القطارات والحواجز واجمع العملات.',
+        hint: 'حرّك العصا يمين/يسار للمسارات • أعلى أو زر قفز • أسفل للانزلاق',
+        hasJoy: true,
+        actionIcon: '⬆️',
+        actionLabel: 'قفز',
+        create: (h, s, o) => new SubwayRush3DGame(h, s, o)
+      },
+      {
+        id: 'piano_2d',
+        emoji: '🎹',
+        tag: '2D RHYTHM',
+        grad: 'from-indigo-600 via-purple-600 to-pink-600',
+        name: 'بيانو بلاك 2D',
+        desc: 'اختر الأغنية والمرحلة واضغط البلاطات السوداء المتساقطة لعزف المقطوعة ومضاعفة نقاط الكومبو.',
+        hint: 'اضغط المسارات باللمس/الماوس أو مفاتيح D F J K',
+        hasJoy: false,
+        optionsHtml: `
+          <label class="text-xs font-extrabold text-slate-300">الأغنية:</label>
+          <select id="opt-piano-track" class="px-2.5 py-1 rounded-xl bg-slate-800 border border-white/15 text-xs font-bold text-white">
+            <option value="furelise">Fur Elise</option>
+            <option value="odetojoy">Ode to Joy</option>
+            <option value="turkish">Turkish March</option>
+          </select>
+          <label class="text-xs font-extrabold text-slate-300">المرحلة:</label>
+          <select id="opt-piano-level" class="px-2.5 py-1 rounded-xl bg-slate-800 border border-white/15 text-xs font-bold text-white">
+            <option value="calm">هادئ</option>
+            <option value="medium">متوسط</option>
+            <option value="pro">محترف</option>
+          </select>
+        `,
+        readOpts: () => ({
+          track: document.getElementById('opt-piano-track')?.value || 'furelise',
+          level: document.getElementById('opt-piano-level')?.value || 'calm'
+        }),
+        create: (h, s, o, opts) => new PianoBlack2DGame(h, s, o, opts)
+      },
+      {
+        id: 'drift_3d',
+        emoji: '🏁',
+        tag: '3D DRIFT PRO',
+        grad: 'from-fuchsia-600 via-purple-600 to-indigo-700',
+        name: 'سباق الدريفت النيون 3D',
+        desc: 'انجرف عبر مسار النيون عالي السرعة، اجمع نقاط الدريفت والتعزيزات وتفادَ الأقماع الحمراء.',
+        hint: 'عصا التحكم 360° للانجراف والتوجيه • زر توربو لزيادة السرعة',
+        hasJoy: true,
+        actionIcon: '⚡',
+        actionLabel: 'توربو',
+        create: (h, s, o) => new NeonDrift3DGame(h, s, o)
+      },
+      {
+        id: 'meteor_3d',
+        emoji: '🛸',
+        tag: '3D SPACE PRO',
+        grad: 'from-violet-600 via-indigo-700 to-slate-900',
+        name: 'قناص النيازك الفضائي 3D',
+        desc: 'قُد مقاتلتك الفضائية في 360 درجة وأطلق أشعة الليزر المزدوجة لتدمير النيازك وحماية الدرع.',
+        hint: 'عصا التحكم 360° للمناورة • زر ليزر أو مسافة لإطلاق النار',
+        hasJoy: true,
+        actionIcon: '🔫',
+        actionLabel: 'ليزر',
+        create: (h, s, o) => new MeteorInterceptor3DGame(h, s, o)
+      }
+    ];
+
+    let currentSpec = null;
+    let runningGame = null;
+
+    function renderGamesGrid() {
+      const grid = document.getElementById('games-grid');
+      if (!grid) return;
+
+      const sum = Object.values(appData.scores).reduce((acc, n) => acc + Number(n || 0), 0);
+      document.getElementById('total-stars').textContent = String(sum);
+
+      grid.innerHTML = GAMES_LIST.map((g) => `
+        <article class="glass-card overflow-hidden flex flex-col justify-between">
+          <div>
+            <div class="h-24 px-4 bg-gradient-to-l ${g.grad} flex items-center justify-between">
+              <div class="w-12 h-12 rounded-2xl bg-slate-950/35 border border-white/30 flex items-center justify-center text-2xl">
+                ${g.emoji}
+              </div>
+              <span class="px-2.5 py-1 rounded-full bg-slate-950/45 border border-white/25 text-[11px] font-black text-white">
+                ${g.tag}
+              </span>
+            </div>
+            <div class="p-4">
+              <h2 class="text-lg font-black text-white mb-1">${g.name}</h2>
+              <p class="text-slate-300 text-xs sm:text-sm leading-relaxed">${g.desc}</p>
+            </div>
+          </div>
+          <div class="px-4 py-3 border-t border-white/10 flex items-center justify-between">
+            <span class="text-amber-400 font-black text-sm">★ ${appData.scores[g.id] || 0}</span>
+            <button onclick="openGame('${g.id}')" class="arcade-btn px-4 py-2 rounded-xl bg-gradient-to-b from-emerald-400 to-green-600 border border-emerald-200/40 border-b-green-900 text-slate-950 font-black text-xs sm:text-sm">
+              تشغيل اللعبة
+            </button>
+          </div>
+        </article>
+      `).join('');
+    }
+
+    function setTelemetry(txt) {
+      const el = document.getElementById('stage-telemetry');
+      if (!el) return;
+      if (txt) {
+        el.textContent = txt;
+        el.classList.remove('hidden');
+      } else {
+        el.classList.add('hidden');
+      }
+    }
+
+    function refreshBestBadge() {
+      const el = document.getElementById('stage-best');
+      if (el && currentSpec) {
+        el.textContent = String(appData.scores[currentSpec.id] || 0);
+      }
+    }
+
+    function stopActiveGame() {
+      if (runningGame && typeof runningGame.stop === 'function') {
+        runningGame.stop();
+      }
+      runningGame = null;
+      InputHub.joyX = 0;
+      InputHub.joyY = 0;
+      InputHub.actionDown = false;
+      setTelemetry('');
+    }
+
+    function switchTab(tab) {
+      stopActiveGame();
+      currentSpec = null;
+
+      document.getElementById('view-stage').classList.add('hidden');
+      document.getElementById('view-games').classList.toggle('hidden', tab !== 'games');
+      document.getElementById('view-custom').classList.toggle('hidden', tab !== 'custom');
+      document.getElementById('view-install').classList.toggle('hidden', tab !== 'install');
+
+      const onCls = 'arcade-btn px-4 py-2.5 rounded-2xl bg-gradient-to-b from-cyan-400 to-sky-600 border border-white/30 border-b-sky-900 text-slate-950 font-black text-sm whitespace-nowrap';
+      const offCls = 'arcade-btn px-4 py-2.5 rounded-2xl bg-slate-800/90 border border-white/15 border-b-slate-950 text-slate-200 font-extrabold text-sm whitespace-nowrap';
+
+      document.getElementById('tab-btn-games').className = tab === 'games' ? onCls : offCls;
+      document.getElementById('tab-btn-custom').className = tab === 'custom' ? onCls : offCls;
+      document.getElementById('tab-btn-install').className = tab === 'install' ? onCls : offCls;
+
+      if (tab === 'games') renderGamesGrid();
+    }
+
+    function openGame(id) {
+      const spec = GAMES_LIST.find((x) => x.id === id);
+      if (spec) prepareStage(spec);
+    }
+
+    function prepareStage(spec) {
+      playTone(540, 780, 0.06, 'sine');
+      stopActiveGame();
+      currentSpec = spec;
+
+      document.getElementById('view-games').classList.add('hidden');
+      document.getElementById('view-custom').classList.add('hidden');
+      document.getElementById('view-install').classList.add('hidden');
+      document.getElementById('view-stage').classList.remove('hidden');
+
+      document.getElementById('stage-emoji').textContent = spec.emoji;
+      document.getElementById('stage-name').textContent = spec.name;
+      document.getElementById('stage-score').textContent = '0';
+      document.getElementById('stage-hint').textContent = spec.hint;
+      document.getElementById('stage-render-tag').textContent = spec.tag;
+      refreshBestBadge();
+
+      const optsEl = document.getElementById('stage-options');
+      if (spec.optionsHtml) {
+        optsEl.innerHTML = spec.optionsHtml;
+        optsEl.classList.remove('hidden');
+      } else {
+        optsEl.innerHTML = '';
+        optsEl.classList.add('hidden');
+      }
+
+      // تهيئة عصا التحكم 360 وزر الأكشن الديناميكي
+      const joyLayer = document.getElementById('joy-hud-layer');
+      joyLayer.classList.toggle('hidden', !spec.hasJoy);
+      if (spec.hasJoy) {
+        document.getElementById('action-btn-icon').textContent = spec.actionIcon || '⚡';
+        document.getElementById('action-btn-label').textContent = spec.actionLabel || 'أكشن';
+        const secBtn = document.getElementById('sec-action-btn');
+        if (spec.secLabel) {
+          secBtn.textContent = spec.secLabel;
+          secBtn.classList.remove('hidden');
+        } else {
+          secBtn.classList.add('hidden');
+        }
+      }
+
+      document.getElementById('ov-emoji').textContent = spec.emoji;
+      document.getElementById('ov-title').textContent = spec.name;
+      document.getElementById('ov-desc').textContent = spec.desc;
+      document.getElementById('ov-btn').textContent = 'ابدأ اللعب الآن';
+      document.getElementById('stage-overlay').classList.remove('hidden');
+    }
+
+    function startStageMatch() {
+      if (!currentSpec) return;
+      playTone(620, 880, 0.07, 'sine');
+      stopActiveGame();
+      document.getElementById('stage-overlay').classList.add('hidden');
+      document.getElementById('stage-score').textContent = '0';
+
+      const host = document.getElementById('stage-host');
+      const opts = currentSpec.readOpts ? currentSpec.readOpts() : {};
+      runningGame = currentSpec.create(
+        host,
+        (pts) => {
+          document.getElementById('stage-score').textContent = String(pts);
+        },
+        (finalPts) => {
+          if (finalPts > (appData.scores[currentSpec.id] || 0)) {
+            appData.scores[currentSpec.id] = finalPts;
+            persistData();
+          }
+          document.getElementById('ov-emoji').textContent = '🏆';
+          document.getElementById('ov-title').textContent = 'انتهت الجولة!';
+          document.getElementById('ov-desc').textContent = `نقاطك: ${finalPts} • أفضل نتيجة: ${appData.scores[currentSpec.id] || 0}`;
+          document.getElementById('ov-btn').textContent = 'لعب مرة أخرى';
+          document.getElementById('stage-overlay').classList.remove('hidden');
+        },
+        opts
+      );
+      runningGame.start();
+    }
+
+    function restartActiveGame() {
+      if (currentSpec) startStageMatch();
+    }
+
+    function exitStageToMenu() {
+      playTone(420, 280, 0.05, 'sine');
+      switchTab('games');
+    }
+
+    /* =====================================================================
+       12. إدارة "لعبتي الخاصة" ومحرر الكود
+    ===================================================================== */
+    function populateCustomForm() {
+      const c = appData.custom;
+      document.getElementById('c-name').value = c.name;
+      document.getElementById('c-color').value = c.color;
+      document.getElementById('c-world').value = c.world;
+      document.getElementById('c-speed').value = String(c.speed);
+      document.getElementById('c-speed-lbl').textContent = String(c.speed);
+      document.getElementById('c-gravity').value = String(c.gravity);
+      document.getElementById('c-gravity-lbl').textContent = String(c.gravity);
+      document.getElementById('c-code').value = c.code;
+    }
+
+    function loadTemplate(key) {
+      if (CODE_TEMPLATES[key]) {
+        document.getElementById('c-code').value = CODE_TEMPLATES[key];
+        playTone(540, 760, 0.06, 'sine');
+      }
+    }
+
+    function saveCustomSettings(notify) {
+      appData.custom = {
+        name: (document.getElementById('c-name').value || '').trim() || 'عالم tapi المخصص',
+        color: document.getElementById('c-color').value || '#00e5ff',
+        world: document.getElementById('c-world').value || 'day',
+        speed: Number(document.getElementById('c-speed').value || 22),
+        gravity: Number(document.getElementById('c-gravity').value || 26),
+        code: document.getElementById('c-code').value || CODE_TEMPLATES.arena360
+      };
+      persistData();
+      if (notify) {
+        const msgEl = document.getElementById('c-msg');
+        msgEl.textContent = '✅ تم حفظ إعدادات وكود لعبتك الخاصة بنجاح.';
+        msgEl.className = 'mt-3 p-3 rounded-xl text-xs sm:text-sm font-bold bg-emerald-500/20 border border-emerald-400/50 text-emerald-200';
+        msgEl.classList.remove('hidden');
+        playTone(600, 880, 0.07, 'sine');
+      }
+    }
+
+    function runCustomGame() {
+      saveCustomSettings(false);
+      prepareStage({
+        id: 'custom_3d',
+        emoji: '🛠️',
+        tag: 'CUSTOM BUILD',
+        name: appData.custom.name,
+        desc: `لعبتك المخصصة • السرعة ${appData.custom.speed} • الجاذبية ${appData.custom.gravity}`,
+        hint: 'عصا التحكم 360° للحركة • زر أكشن للتفاعل والقفز/الإطلاق',
+        hasJoy: true,
+        actionIcon: '⚡',
+        actionLabel: 'أكشن',
+        create: (h, s, o) => new CustomUserGame(h, s, o, appData.custom)
+      });
+    }
+
+    /* =====================================================================
+       13. التثبيت على الهاتف (PWA Manifest + SW) والتنزيل المباشر (HTML Blob)
+    ===================================================================== */
+    let deferredInstallEvent = null;
+
+    function initPwaCapabilities() {
+      window.addEventListener('beforeinstallprompt', (e) => {
+        e.preventDefault();
+        deferredInstallEvent = e;
+      });
+
+      try {
+        const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 192 192"><rect width="192" height="192" rx="44" fill="#0ea5e9"/><text x="96" y="132" font-size="116" font-weight="900" font-family="sans-serif" text-anchor="middle" fill="#040812">t</text></svg>`;
+        const iconHref = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg);
+        const manifest = {
+          name: 'tapi • XMO 3D منصة الألعاب',
+          short_name: 'tapi 3D',
+          start_url: './',
+          display: 'standalone',
+          background_color: '#091124',
+          theme_color: '#091124',
+          icons: [
+            { src: iconHref, sizes: '192x192', type: 'image/svg+xml' },
+            { src: iconHref, sizes: '512x512', type: 'image/svg+xml' }
+          ]
+        };
+        const mBlob = new Blob([JSON.stringify(manifest)], { type: 'application/manifest+json' });
+        const link = document.createElement('link');
+        link.rel = 'manifest';
+        link.href = URL.createObjectURL(mBlob);
+        document.head.appendChild(link);
+      } catch (_) {}
+
+      try {
+        const secure = window.location.protocol === 'https:' || window.location.hostname === 'localhost';
+        if (secure && 'serviceWorker' in navigator) {
+          const sw = `
+            self.addEventListener('install', (e) => self.skipWaiting());
+            self.addEventListener('activate', (e) => e.waitUntil(self.clients.claim()));
+            self.addEventListener('fetch', (e) => e.respondWith(fetch(e.request).catch(() => caches.match(e.request))));
+          `;
+          navigator.serviceWorker.register(URL.createObjectURL(new Blob([sw], { type: 'application/javascript' }))).catch(() => {});
+        }
+      } catch (_) {}
+    }
+
+    function setInstallNotice(msg) {
+      const box = document.getElementById('install-feedback');
+      if (box) {
+        box.textContent = msg;
+        box.classList.remove('hidden');
+      }
+    }
+
+    function downloadHtmlApp() {
+      try {
+        const docStr = '<!DOCTYPE html>\n' + document.documentElement.outerHTML;
+        const blob = new Blob([docStr], { type: 'text/html;charset=utf-8' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'tapi-app.html';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        setTimeout(() => URL.revokeObjectURL(url), 4000);
+        playTone(580, 880, 0.09, 'sine');
+        setInstallNotice('✅ تم بدء تنزيل ملف التطبيق (tapi-app.html). يمكنك فتحه من جهازك في أي وقت حتى بدون إنترنت.');
+      } catch (_) {
+        setInstallNotice('تعذّر التنزيل التلقائي هنا؛ يمكنك حفظ الصفحة من قائمة المتصفح.');
+      }
+    }
+
+    async function promptPwaInstall() {
+      if (deferredInstallEvent) {
+        try {
+          deferredInstallEvent.prompt();
+          const choice = await deferredInstallEvent.userChoice;
+          deferredInstallEvent = null;
+          if (choice && choice.outcome === 'accepted') {
+            setInstallNotice('✅ تمت إضافة tapi إلى الشاشة الرئيسية بنجاح!');
+          } else {
+            setInstallNotice('يمكنك الإضافة في أي وقت من قائمة المتصفح (⋮) ثم "الإضافة إلى الشاشة الرئيسية".');
+          }
+          return;
+        } catch (_) {}
+      }
+      setInstallNotice('📲 لإضافة tapi لواجهة هاتفك: اضغط قائمة المتصفح (⋮ في Chrome أو ⎋ في Safari) واختر "الإضافة إلى الشاشة الرئيسية".');
+    }
+
+    window.addEventListener('DOMContentLoaded', () => {
+      loadData();
+      setupJoystickAndKeys();
+      initPwaCapabilities();
+      bootThreeLoader();
+    });
+  </script>
+</body>
+</html>
